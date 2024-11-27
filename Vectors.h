@@ -3,14 +3,20 @@
 
 class Vectors {
 public:
+    float* vectors;
+    float* clusters;
+    int* belonging;
+    
     bool readFromTextFile(const std::string& filename);
     int getNumPoints() const;
     int getNumDimensions() const;
     int getNumClusters() const;
-    float* getPoints();
+
+    void PrintClusters();
+    void PrintVectors();
+
     ~Vectors();
 
 private:
-    int numPoints, numDimensions, numClusters;
-    float* points;
+    int N, D, K;
 };
