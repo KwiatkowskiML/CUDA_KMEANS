@@ -1,0 +1,24 @@
+# Ignore build directories and output files
+/x64/
+/kmeans/
+
+# Ignore Visual Studio files
+.vs/
+.vs2019/
+*.vcxproj.user
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Ignore temporary files
+*.log
+*.obj
+*.pch
+*.idb
+*.ipch
+*.pdb
+*.ilk
+
+# Ignore other IDEs (optional, if you use other IDEs like JetBrains Rider or CLion)
+/.idea/
