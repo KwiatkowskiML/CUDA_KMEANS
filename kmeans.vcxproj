@@ -128,10 +128,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <CudaCompile Include="gpu1.cu" />
     <CudaCompile Include="main.cpp" />
     <CudaCompile Include="vector_add_kernel.cu" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="gpu1.cuh" />
+    <ClInclude Include="DeviceConstants.cuh" />
+    <ClInclude Include="HostConstants.h" />
     <ClInclude Include="Vectors.h" />
     <ClInclude Include="vector_add_kernel.cuh" />
   </ItemGroup>

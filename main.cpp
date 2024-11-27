@@ -3,15 +3,16 @@
 #include "Vectors.h"
 #include <iostream>
 #include <iomanip>
+#include "HostConstants.h"
 
 int main() {
     Vectors vectors;
-    if (vectors.readFromTextFile("C://Users//Kmicha//studia//sem5//gpu//points//points_test.txt")) {
+    if (vectors.readFromTextFile(FILE_PATH)) {
         std::cout << "Number of points: " << vectors.getNumPoints() << std::endl;
         std::cout << "Number of dimensions: " << vectors.getNumDimensions() << std::endl;
         std::cout << "Number of clusters: " << vectors.getNumClusters() << std::endl;
 
-        float* points = vectors.getPoints();
+        /*float* points = vectors.getPoints();
         for (int i = 0; i < vectors.getNumPoints(); i++) {
             std::cout << std::fixed << std::setprecision(10);
             std::cout << "Point: ";
@@ -19,7 +20,7 @@ int main() {
                 std::cout << points[i * vectors.getNumDimensions() + j] << " ";
             }
             std::cout << std::endl;
-        }
+        }*/
     }
     else {
         std::cerr << "Failed to read input file." << std::endl;
