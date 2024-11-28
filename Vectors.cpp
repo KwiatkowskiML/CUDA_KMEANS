@@ -109,13 +109,9 @@ void Vectors::PrintBelonging()
         return;
 
     std::cout << std::endl << std::endl;
-    for (int i = 0; i < N; i++)
+    for (int i = 0; i < N * D; i++)
     {
-        for (int j = 0; j < D; j++)
-        {
-            std::cout << belonging[i * D + j] << " ";
-        }
-        std::cout << std::endl;
+        std::cout << belonging[i] << " ";
     }
 }
 

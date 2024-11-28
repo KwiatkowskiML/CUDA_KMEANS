@@ -2,63 +2,85 @@
 #include "device_launch_parameters.h"
 #include <stdio.h>
 #include "gpu1.cuh"
+#include <iostream>
 
-cudaError_t CalculateKmean(float* clusters, const float* vectors, int* belonging, const int& N, const int& K, const int& D)
+#define DEBUG
+
+#define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+
+inline void gpuAssert(cudaError_t code, const char* file, int line, bool abort = true)
+{
+    if (code != cudaSuccess)
+    {
+        fprintf(stderr, "GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+        if (abort) exit(code);
+    }
+}
+
+
+__global__ void CalculateBelongings(const float* clusters, const float* vectors, int* belonging, const int& N, const int& D, const int& K)
+{
+    int idx = blockDim.x * blockIdx.x + threadIdx.x;
+
+    int min_cluster = 0;
+    float min_distance = FLT_MAX;
+
+    for (int i = 0; i < K; i++) {
+        float distance = 0.0f;
+        for (int j = 0; j < D; j++) {
+            float diff = vectors[idx * D + j] - clusters[i * D + j];
+            distance += diff * diff;
+        }
+        if (distance < min_distance) {
+            min_distance = distance;
+            min_cluster = i;
+        }
+    }
+
+    for (int i = 0; i < D; i++)
+    {
+        belonging[idx + i * N] = i * K + min_cluster;
+    }
+}
+
+void CalculateKmean(float* clusters, const float* vectors, int* belonging, int N, int K, int D)
 {
     float* dev_clusters = 0;
     float* dev_vectors = 0;
     int* dev_belonging = 0;
-    cudaError_t cudaStatus;
+    int* dev_n = 0;
+    int* dev_k = 0;
+    int* dev_d = 0;
 
-    cudaStatus = cudaSetDevice(0);
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaSetDevice failed!");
-        goto Error;
-    }
+    gpuErrchk(cudaSetDevice(0));
 
     // Memory allocation on the side of the device
-    cudaStatus = cudaMalloc((void**)&dev_clusters, K * D * sizeof(float));
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMalloc failed for dev_clusters!");
-        goto Error;
-    }
-
-    cudaStatus = cudaMalloc((void**)&dev_vectors, N * D * sizeof(float));
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMalloc failed for dev_vectors!");
-        goto Error;
-    }
-
-    cudaStatus = cudaMalloc((void**)&dev_belonging, N * D * sizeof(int));
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMalloc failed for dev_belonging!");
-        goto Error;
-    }
+    gpuErrchk(cudaMalloc((void**)&dev_clusters, K * D * sizeof(float)));
+    gpuErrchk(cudaMalloc((void**)&dev_vectors, N * D * sizeof(float)));
+    gpuErrchk(cudaMalloc((void**)&dev_belonging, N * D * sizeof(int)));
+    gpuErrchk(cudaMalloc((void**)&dev_n, sizeof(int)));
+    gpuErrchk(cudaMalloc((void**)&dev_k, sizeof(int)));
+    gpuErrchk(cudaMalloc((void**)&dev_d, sizeof(int)));
 
     // Copying memory from host to device
-    cudaStatus = cudaMemcpy(dev_vectors, vectors, N * D * sizeof(float), cudaMemcpyHostToDevice);
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMemcpy failed for dev_vectors!");
-        goto Error;
-    }
-
-    cudaStatus = cudaMemcpy(dev_clusters, clusters, K * D * sizeof(float), cudaMemcpyHostToDevice);
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMemcpy failed for to dev_clusters!");
-        goto Error;
-    } 
-
-    cudaStatus = cudaMemset(dev_belonging, 0, N * D * sizeof(int));
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMemset failed for dev_belonging!");
-        goto Error;
-    }
+    gpuErrchk(cudaMemcpy(dev_vectors, vectors, N * D * sizeof(float), cudaMemcpyHostToDevice));
+    gpuErrchk(cudaMemcpy(dev_clusters, clusters, K * D * sizeof(float), cudaMemcpyHostToDevice));
+    gpuErrchk(cudaMemset(dev_belonging, 0, N * D * sizeof(int)));
+    gpuErrchk(cudaMemcpy(dev_n, &N, sizeof(int), cudaMemcpyHostToDevice));
+    gpuErrchk(cudaMemcpy(dev_k, &K, sizeof(int), cudaMemcpyHostToDevice));
+    gpuErrchk(cudaMemcpy(dev_d, &D, sizeof(int), cudaMemcpyHostToDevice));
 
     //-------------------------------
     //            LOGIC
     //-------------------------------
 
+    CalculateBelongings << <1, N >> > (dev_clusters, dev_vectors, dev_belonging, *dev_n, *dev_d, *dev_k);
 
+    gpuErrchk(cudaGetLastError());
+
+    // cudaDeviceSynchronize waits for the kernel to finish, and returns
+    // any errors encountered during the launch.cudaStatus = cudaDeviceSynchronize();
+    gpuErrchk(cudaDeviceSynchronize())    
 
     //-------------------------------
     //         END OF LOGIC
@@ -66,27 +88,14 @@ cudaError_t CalculateKmean(float* clusters, const float* vectors, int* belonging
 
 
     // Copy memory back to the host
-    cudaStatus = cudaMemcpy(clusters, dev_clusters, K * D * sizeof(float), cudaMemcpyDeviceToHost);
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMemcpy failed for clusters!");
-        goto Error;
-    }
-
-    cudaStatus = cudaMemcpy(belonging, dev_belonging, N * D * sizeof(int), cudaMemcpyDeviceToHost);
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMemcpy failed for belonging!");
-        goto Error;
-    }
-
-Error:
-    cudaFree(dev_clusters);
-    cudaFree(dev_vectors);
-    cudaFree(dev_belonging);
-
-    return cudaStatus;
-}
-
-__global__ void CalculateBelongings(const float* clusters, const float* vectors, int* belonging, const int& N, const int& D, const int& K)
-{
-
+    gpuErrchk(cudaMemcpy(clusters, dev_clusters, K * D * sizeof(float), cudaMemcpyDeviceToHost));
+    gpuErrchk(cudaMemcpy(belonging, dev_belonging, N * D * sizeof(int), cudaMemcpyDeviceToHost));
+    
+    // Cleaning
+    gpuErrchk(cudaFree(dev_clusters));
+    gpuErrchk(cudaFree(dev_vectors));
+    gpuErrchk(cudaFree(dev_belonging));
+    gpuErrchk(cudaFree(dev_n));
+    gpuErrchk(cudaFree(dev_k));
+    gpuErrchk(cudaFree(dev_d));
 }
