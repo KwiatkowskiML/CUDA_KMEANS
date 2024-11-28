@@ -5,6 +5,7 @@
 #include <iostream>
 #include <thrust/sort.h>
 #include <thrust/device_ptr.h>
+#include <thrust/iterator/discard_iterator.h>
 
 #define DEBUG
 
@@ -30,7 +31,7 @@ __global__ void CalculateBelongings(const float* clusters, const float* vectors,
     for (int i = 0; i < K; i++) {
         float distance = 0.0f;
         for (int j = 0; j < D; j++) {
-            float diff = vectors[idx * D + j] - clusters[i * D + j];
+            float diff = vectors[idx + j * N] - clusters[i + j * K];
             distance += diff * diff;
         }
         if (distance < min_distance) {
@@ -87,7 +88,13 @@ void CalculateKmean(float* clusters, const float* vectors, int* belonging, int N
     // sorting 
     thrust::device_ptr<int> keys(dev_belonging);
     thrust::device_ptr<float> vals(dev_vectors);
+    thrust::device_ptr<float> clusters_ptr(dev_clusters);
+
     thrust::sort_by_key(keys, keys + N * D, vals);
+
+    // reduction
+    thrust::equal_to<int> binary_pred;
+    thrust::reduce_by_key(keys, keys + N * D, vals, thrust::make_discard_iterator(), clusters_ptr, binary_pred);
 
     //-------------------------------
     //         END OF LOGIC
