@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include "gpu1.cuh"
 #include <iostream>
+#include <thrust/sort.h>
+#include <thrust/device_ptr.h>
 
 #define DEBUG
 
@@ -81,6 +83,11 @@ void CalculateKmean(float* clusters, const float* vectors, int* belonging, int N
     // cudaDeviceSynchronize waits for the kernel to finish, and returns
     // any errors encountered during the launch.cudaStatus = cudaDeviceSynchronize();
     gpuErrchk(cudaDeviceSynchronize())    
+
+    // sorting 
+    thrust::device_ptr<int> keys(dev_belonging);
+    thrust::device_ptr<float> vals(dev_vectors);
+    thrust::sort_by_key(keys, keys + N * D, vals);
 
     //-------------------------------
     //         END OF LOGIC

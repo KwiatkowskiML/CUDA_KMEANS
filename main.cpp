@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <iostream>
 #include <iomanip>
 #include "HostConstants.h"
 #include "vector_add_kernel.cuh"
@@ -9,13 +8,13 @@
 int main() {
     Vectors vectorsStorage;
     if (!vectorsStorage.readFromTextFile(FILE_PATH)) {
-        std::cerr << "Failed to read input file." << std::endl;
+        fprintf(stderr, "Failed to read input file.\n");
         return 1;
     }
 
-    std::cout << "Number of points: " << vectorsStorage.getNumPoints() << std::endl;
-    std::cout << "Number of dimensions: " << vectorsStorage.getNumDimensions() << std::endl;
-    std::cout << "Number of clusters: " << vectorsStorage.getNumClusters() << std::endl;
+    fprintf(stdout, "Number of points: %d\n", vectorsStorage.getNumPoints());
+    fprintf(stdout, "Number of dimensions: %d\n", vectorsStorage.getNumDimensions());
+    fprintf(stdout, "Number of clusters: %d\n", vectorsStorage.getNumClusters());
 
     vectorsStorage.PrintVectors();
 
@@ -32,9 +31,9 @@ int main() {
 
     CalculateKmean(clusters, vectors, belonging, N, K, D);
 
-
     vectorsStorage.PrintClusters();
     vectorsStorage.PrintBelonging();
+    // vectorsStorage.PrintVectors();
 
     return 0;
 }
