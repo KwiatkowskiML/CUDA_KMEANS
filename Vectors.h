@@ -14,6 +14,7 @@ public:
 
     void PrintClusters();
     void PrintVectors();
+    void PrintBelonging();
 
     ~Vectors();
 

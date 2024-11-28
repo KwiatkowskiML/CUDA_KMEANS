@@ -27,6 +27,9 @@ int main() {
     int K = vectorsStorage.getNumClusters();
     int D = vectorsStorage.getNumDimensions();
 
+    vectorsStorage.PrintClusters();
+    vectorsStorage.PrintBelonging();
+
     cudaError_t cudaStatus = CalculateKmean(clusters, vectors, belonging, N, K, D);
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "addWithCuda failed!");
@@ -34,6 +37,7 @@ int main() {
     }
 
     vectorsStorage.PrintClusters();
+    vectorsStorage.PrintBelonging();
 
     return 0;
 }

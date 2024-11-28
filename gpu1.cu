@@ -16,6 +16,7 @@ cudaError_t CalculateKmean(float* clusters, const float* vectors, int* belonging
         goto Error;
     }
 
+    // Memory allocation on the side of the device
     cudaStatus = cudaMalloc((void**)&dev_clusters, K * D * sizeof(float));
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaMalloc failed for dev_clusters!");
@@ -28,37 +29,50 @@ cudaError_t CalculateKmean(float* clusters, const float* vectors, int* belonging
         goto Error;
     }
 
-    cudaStatus = cudaMalloc((void**)&dev_belonging, N * D * sizeof(float));
+    cudaStatus = cudaMalloc((void**)&dev_belonging, N * D * sizeof(int));
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaMalloc failed for dev_belonging!");
         goto Error;
     }
 
-    cudaStatus = cudaMemcpy(dev_vectors, vectors, N * D * sizeof(int), cudaMemcpyHostToDevice);
+    // Copying memory from host to device
+    cudaStatus = cudaMemcpy(dev_vectors, vectors, N * D * sizeof(float), cudaMemcpyHostToDevice);
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaMemcpy failed for dev_vectors!");
         goto Error;
     }
 
-    cudaStatus = cudaMemcpy(dev_clusters, dev_vectors, K * D * sizeof(float), cudaMemcpyDeviceToDevice);
+    cudaStatus = cudaMemcpy(dev_clusters, clusters, K * D * sizeof(float), cudaMemcpyHostToDevice);
     if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMemcpy failed for copying dev_vectors to dev_clusters!");
+        fprintf(stderr, "cudaMemcpy failed for to dev_clusters!");
         goto Error;
     } 
 
-    cudaStatus = cudaMemset(dev_belonging, 1, N * D * sizeof(int));
+    cudaStatus = cudaMemset(dev_belonging, 0, N * D * sizeof(int));
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaMemset failed for dev_belonging!");
         goto Error;
     }
 
+    //-------------------------------
+    //            LOGIC
+    //-------------------------------
+
+
+
+    //-------------------------------
+    //         END OF LOGIC
+    //-------------------------------
+
+
+    // Copy memory back to the host
     cudaStatus = cudaMemcpy(clusters, dev_clusters, K * D * sizeof(float), cudaMemcpyDeviceToHost);
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaMemcpy failed for clusters!");
         goto Error;
     }
 
-    cudaStatus = cudaMemcpy(belonging, dev_belonging, N * D * sizeof(float), cudaMemcpyDeviceToHost);
+    cudaStatus = cudaMemcpy(belonging, dev_belonging, N * D * sizeof(int), cudaMemcpyDeviceToHost);
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaMemcpy failed for belonging!");
         goto Error;
@@ -70,4 +84,9 @@ Error:
     cudaFree(dev_belonging);
 
     return cudaStatus;
+}
+
+__global__ void CalculateBelongings(const float* clusters, const float* vectors, int* belonging, const int& N, const int& D, const int& K)
+{
+
 }

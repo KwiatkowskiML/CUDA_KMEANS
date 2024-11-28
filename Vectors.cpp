@@ -28,14 +28,22 @@ bool Vectors::readFromTextFile(const std::string& filename) {
         goto Error;
     }
 
-    // TODO: fix
     // Read the data points
     for (int i = 0; i < N; i++) {
         for (int j = 0; j < D; j++) {
-            if (fscanf(file, "%f", &vectors[i + j * D]) != 1) {
+            if (fscanf(file, "%f", &vectors[i + j * N]) != 1) {
                 std::cerr << "Failed to read vector " << i << " from file: " << filename << std::endl;
                 goto Error;
             }
+        }
+    }
+
+    // Filling clusters array
+    for (int i = 0; i < K; i++)
+    {
+        for (int j = 0; j < D; j++)
+        {
+            clusters[i + j * K] = vectors[i + j * N];
         }
     }
 
@@ -68,12 +76,13 @@ void Vectors::PrintClusters()
     if (clusters == nullptr)
         return;
 
+    std::cout << std::endl << std::endl;
     for (int i = 0; i < K; i++)
     {
         std::cout << "Cluster " << i << ": ";
         for (int j = 0; j < D; j++)
         {
-            std::cout << clusters[i + j * D] << " ";
+            std::cout << clusters[i + j * K] << " ";
         }
         std::cout << std::endl;
     }
@@ -84,18 +93,29 @@ void Vectors::PrintVectors()
     if (vectors == nullptr)
         return;
 
-    /*for (int i = 0; i < N; i++)
+    for (int i = 0; i < N; i++)
     {
         for (int j = 0; j < D; j++)
         {
-            std::cout << vectors[i + j * D] << " ";
+            std::cout << vectors[i + j * N] << " ";
         }
         std::cout << std::endl;
-    }*/
+    }
+}
 
-    for (int i = 0; i < N * D; i++)
+void Vectors::PrintBelonging()
+{
+    if (belonging == nullptr)
+        return;
+
+    std::cout << std::endl << std::endl;
+    for (int i = 0; i < N; i++)
     {
-        std::cout << vectors[i] << " ";
+        for (int j = 0; j < D; j++)
+        {
+            std::cout << belonging[i * D + j] << " ";
+        }
+        std::cout << std::endl;
     }
 }
 
