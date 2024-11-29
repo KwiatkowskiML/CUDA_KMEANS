@@ -24,13 +24,13 @@ int main() {
     int K = vectorsStorage.getNumClusters();
     int D = vectorsStorage.getNumDimensions();
 
-    /*vectorsStorage.PrintVectors();
-    vectorsStorage.PrintClusters();*/
+    vectorsStorage.PrintVectors();
+    vectorsStorage.PrintClusters();
 
     CalculateKmean(clusters, vectors, belonging, N, K, D);
 
-    /*vectorsStorage.PrintClusters();
-    vectorsStorage.PrintBelonging();*/
+    vectorsStorage.PrintClusters();
+    vectorsStorage.PrintBelonging();
 
     return 0;
 }

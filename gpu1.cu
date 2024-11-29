@@ -10,6 +10,8 @@
 #include <thrust/device_ptr.h>
 #include <thrust/iterator/discard_iterator.h>
 #include <thrust/iterator/constant_iterator.h>
+#include <thrust/iterator/zip_iterator.h>
+#include <thrust/tuple.h>
 #include <thrust/device_vector.h>
 
 #define DEBUG
@@ -24,7 +26,6 @@ inline void gpuAssert(cudaError_t code, const char* file, int line, bool abort =
         if (abort) exit(code);
     }
 }
-
 
 __global__ void CalculateBelongings(const float* clusters, const float* vectors, int* belonging, const int& N, const int& D, const int& K)
 {
@@ -73,6 +74,7 @@ void CalculateKmean(float* clusters, const float* vectors, int* belonging, int N
     int* dev_k = 0;
     int* dev_d = 0;
     int* dev_cluster_count = 0;
+    thrust::device_vector<int> vector_order(N);
 
     gpuErrchk(cudaSetDevice(0));
 
@@ -100,6 +102,15 @@ void CalculateKmean(float* clusters, const float* vectors, int* belonging, int N
     thrust::device_ptr<float> clusters_ptr(dev_clusters);
     thrust::device_ptr<int> cluster_count_ptr(dev_cluster_count);
     thrust::constant_iterator<int> const_iter(1);
+    thrust::counting_iterator<int> count_iter(0);
+    thrust::equal_to<int> binary_pred;
+
+    thrust::copy(count_iter, count_iter + N, vector_order.begin());
+    for (int i = 0; i < N; i++)
+    {
+        std::cout << vector_order[i] << " ";
+    }
+    std::cout << std::endl;
 
     //-------------------------------
     //            LOGIC
@@ -107,17 +118,35 @@ void CalculateKmean(float* clusters, const float* vectors, int* belonging, int N
 
     int block_count = (N + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
     CalculateBelongings << <block_count, THREADS_PER_BLOCK >> > (dev_clusters, dev_vectors, dev_belonging, *dev_n, *dev_d, *dev_k);
+    for (int i = 0; i < N * D; i++)
+    {
+        std::cout << keys[i] << " ";
+    }
+    std::cout << std::endl;
 
     // sorting 
-    thrust::sort_by_key(keys, keys + N * D, vals);
+    thrust::sort_by_key(keys, keys + N, thrust::make_zip_iterator(thrust::make_tuple(vector_order.begin(), vals)));
+    thrust::sort_by_key(keys + N, keys + N * D, vals + N);
 
     // reduction
-    thrust::equal_to<int> binary_pred;
     thrust::reduce_by_key(keys, keys + N * D, vals, thrust::make_discard_iterator(), clusters_ptr, binary_pred);
-    
+
     // updating clusters
     thrust::reduce_by_key(keys, keys + N, const_iter, thrust::make_discard_iterator(), cluster_count_ptr, binary_pred);
-    CalculateClusters << <1, K>> > (dev_clusters, dev_cluster_count, *dev_d, *dev_k);
+    CalculateClusters << <1, K >> > (dev_clusters, dev_cluster_count, *dev_d, *dev_k);
+
+   
+    /*for (int i = 0; i < N; i++)
+    {
+        std::cout << vector_order[i] << " ";
+    }
+    std::cout << std::endl;
+
+    for (int i = 0; i < N * D; i++)
+    {
+        std::cout << keys[i] << " ";
+    }
+    std::cout << std::endl;*/
 
     //-------------------------------
     //         END OF LOGIC
