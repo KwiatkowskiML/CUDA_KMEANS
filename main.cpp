@@ -3,6 +3,7 @@
 #include "vector_add_kernel.cuh"
 #include "Vectors.h"
 #include "gpu1.cuh"
+#include "gpu2.cuh"
 #include "HostConstants.h"
 
 int main() {
@@ -27,7 +28,7 @@ int main() {
     vectorsStorage.PrintVectors();
     vectorsStorage.PrintClusters();
 
-    CalculateKmean(clusters, vectors, belonging, N, K, D);
+    CalculateKmean2(clusters, vectors, belonging, N, K, D);
 
     vectorsStorage.PrintClusters();
     vectorsStorage.PrintBelonging();

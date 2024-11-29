@@ -24,6 +24,9 @@
     <CudaCompile Include="gpu1.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>
+    <CudaCompile Include="gpu2.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="vector_add_kernel.cuh">
@@ -39,6 +42,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="gpu1.cuh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="gpu2.cuh">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

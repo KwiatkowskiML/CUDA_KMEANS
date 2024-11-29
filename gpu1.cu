@@ -14,8 +14,6 @@
 #include <thrust/tuple.h>
 #include <thrust/device_vector.h>
 
-#define DEBUG
-
 #define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 
 inline void gpuAssert(cudaError_t code, const char* file, int line, bool abort = true)
@@ -76,6 +74,19 @@ void CalculateKmean(float* clusters, const float* vectors, int* belonging, int N
     int* dev_cluster_count = 0;
     thrust::device_vector<int> vector_order(N);
 
+    //-------------------------------
+    //      TIME MEASUREMENT
+    //-------------------------------
+
+    float milliseconds = 0;
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+
+    //-------------------------------
+    //      DATA PREPARATION
+    //-------------------------------
+    
     gpuErrchk(cudaSetDevice(0));
 
     // Memory allocation on the side of the device
@@ -104,29 +115,73 @@ void CalculateKmean(float* clusters, const float* vectors, int* belonging, int N
     thrust::constant_iterator<int> const_iter(1);
     thrust::counting_iterator<int> count_iter(0);
     thrust::equal_to<int> binary_pred;
-
     thrust::copy(count_iter, count_iter + N, vector_order.begin());
 
     //-------------------------------
     //            LOGIC
     //-------------------------------
+   
+    cudaEventRecord(start, 0);
 
     int block_count = (N + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
     CalculateBelongings << <block_count, THREADS_PER_BLOCK >> > (dev_clusters, dev_vectors, dev_belonging, *dev_n, *dev_d, *dev_k);
 
+    cudaEventRecord(stop, 0);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&milliseconds, start, stop);
+    fprintf(stdout, "\nCalculate belongings time: %f\n", milliseconds);
+    cudaEventRecord(start, 0);
+
     // sorting 
     thrust::sort_by_key(keys, keys + N, thrust::make_zip_iterator(thrust::make_tuple(vector_order.begin(), vals)));
+
+    cudaEventRecord(stop, 0);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&milliseconds, start, stop);
+    fprintf(stdout, "Sorting the belongings and orders time: %f\n", milliseconds);
+    cudaEventRecord(start, 0);
+
     thrust::sort_by_key(keys + N, keys + N * D, vals + N);
+
+    cudaEventRecord(stop, 0);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&milliseconds, start, stop);
+    fprintf(stdout, "Sorting the belongings and orders time: %f\n", milliseconds);
+    cudaEventRecord(start, 0);
 
     // reduction
     thrust::reduce_by_key(keys, keys + N * D, vals, thrust::make_discard_iterator(), clusters_ptr, binary_pred);
 
+    cudaEventRecord(stop, 0);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&milliseconds, start, stop);
+    fprintf(stdout, "Reduction time: %f\n", milliseconds);
+    cudaEventRecord(start, 0);
+
     // updating clusters
     thrust::reduce_by_key(keys, keys + N, const_iter, thrust::make_discard_iterator(), cluster_count_ptr, binary_pred);
+
+    cudaEventRecord(stop, 0);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&milliseconds, start, stop);
+    fprintf(stdout, "Calculating number of vectors in each cluster time: %f\n", milliseconds);
+    cudaEventRecord(start, 0);
+
     CalculateClusters << <1, K >> > (dev_clusters, dev_cluster_count, *dev_d, *dev_k);
 
+    cudaEventRecord(stop, 0);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&milliseconds, start, stop);
+    fprintf(stdout, "Updating clusters time : % f\n", milliseconds);
+    cudaEventRecord(start, 0);
+
     // back to original vectors order
-    thrust::sort_by_key(vector_order.begin(), vector_order.end(), keys);
+    thrust::sort_by_key(vector_order.begin(), vector_order.end(), keys);   
+
+    cudaEventRecord(stop, 0);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&milliseconds, start, stop);
+    fprintf(stdout, "Sorting belonging to return order time : % f\n", milliseconds);
 
     //-------------------------------
     //         END OF LOGIC
@@ -148,4 +203,7 @@ void CalculateKmean(float* clusters, const float* vectors, int* belonging, int N
     gpuErrchk(cudaFree(dev_n));
     gpuErrchk(cudaFree(dev_k));
     gpuErrchk(cudaFree(dev_d));
+    gpuErrchk(cudaEventDestroy(start));
+    gpuErrchk(cudaEventDestroy(stop));
+
 }
