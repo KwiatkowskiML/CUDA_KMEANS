@@ -106,11 +106,6 @@ void CalculateKmean(float* clusters, const float* vectors, int* belonging, int N
     thrust::equal_to<int> binary_pred;
 
     thrust::copy(count_iter, count_iter + N, vector_order.begin());
-    for (int i = 0; i < N; i++)
-    {
-        std::cout << vector_order[i] << " ";
-    }
-    std::cout << std::endl;
 
     //-------------------------------
     //            LOGIC
@@ -118,11 +113,6 @@ void CalculateKmean(float* clusters, const float* vectors, int* belonging, int N
 
     int block_count = (N + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
     CalculateBelongings << <block_count, THREADS_PER_BLOCK >> > (dev_clusters, dev_vectors, dev_belonging, *dev_n, *dev_d, *dev_k);
-    for (int i = 0; i < N * D; i++)
-    {
-        std::cout << keys[i] << " ";
-    }
-    std::cout << std::endl;
 
     // sorting 
     thrust::sort_by_key(keys, keys + N, thrust::make_zip_iterator(thrust::make_tuple(vector_order.begin(), vals)));
@@ -135,18 +125,8 @@ void CalculateKmean(float* clusters, const float* vectors, int* belonging, int N
     thrust::reduce_by_key(keys, keys + N, const_iter, thrust::make_discard_iterator(), cluster_count_ptr, binary_pred);
     CalculateClusters << <1, K >> > (dev_clusters, dev_cluster_count, *dev_d, *dev_k);
 
-   
-    /*for (int i = 0; i < N; i++)
-    {
-        std::cout << vector_order[i] << " ";
-    }
-    std::cout << std::endl;
-
-    for (int i = 0; i < N * D; i++)
-    {
-        std::cout << keys[i] << " ";
-    }
-    std::cout << std::endl;*/
+    // back to original vectors order
+    thrust::sort_by_key(vector_order.begin(), vector_order.end(), keys);
 
     //-------------------------------
     //         END OF LOGIC
@@ -159,7 +139,7 @@ void CalculateKmean(float* clusters, const float* vectors, int* belonging, int N
 
     // Copy memory back to the host
     gpuErrchk(cudaMemcpy(clusters, dev_clusters, K * D * sizeof(float), cudaMemcpyDeviceToHost));
-    gpuErrchk(cudaMemcpy(belonging, dev_belonging, N * D * sizeof(int), cudaMemcpyDeviceToHost));
+    gpuErrchk(cudaMemcpy(belonging, dev_belonging, N * sizeof(int), cudaMemcpyDeviceToHost));
     
     // Cleaning
     gpuErrchk(cudaFree(dev_clusters));

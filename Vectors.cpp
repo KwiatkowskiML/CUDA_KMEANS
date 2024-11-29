@@ -20,7 +20,7 @@ bool Vectors::readFromTextFile(const std::string& filename) {
     try {
         vectors = new float[N * D];
         clusters = new float[K * D];
-        belonging = new int[N * D];
+        belonging = new int[N];
     }
     catch (const std::bad_alloc& e) {
         fprintf(stderr, "Memory allocation failed: %s\n", e.what());
@@ -101,7 +101,7 @@ void Vectors::PrintBelonging()
     if (belonging == nullptr)
         return;
     fprintf(stdout, "\n\n");
-    for (int i = 0; i < N * D; i++)
+    for (int i = 0; i < N; i++)
     {
         fprintf(stdout, "%d ", belonging[i]);
     }
