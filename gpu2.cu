@@ -63,6 +63,29 @@ __global__ void AddKernel(float* clusters, const float* vectors, const int* belo
     }
 }
 
+__global__ void AddKernel2(float* clusters, const float* vectors, const int* belonging, const int& N, const int& D, const int& K)
+{
+    extern __shared__ float shared_clusters[];
+    int idx = blockDim.x * blockIdx.x + threadIdx.x;
+
+    if (idx < N * D)
+    {
+        int cord_idx = idx / N;
+        int vec_idx = idx % N;
+
+        int cluster_id = belonging[vec_idx];
+        int cluster_offset = cord_idx * K + cluster_id;
+        atomicAdd(shared_clusters + cluster_offset, vectors[idx]);
+    }
+
+    __syncthreads();
+
+    if (idx < K * D)
+    {
+        atomicAdd(&clusters[idx], shared_clusters[idx]);
+    }   
+}
+
 void CalculateKmean2(float* clusters, const float* vectors, int* belonging, int N, int K, int D)
 {
     float* dev_clusters = 0;
@@ -122,9 +145,13 @@ void CalculateKmean2(float* clusters, const float* vectors, int* belonging, int 
 
     gpuErrchk(cudaEventRecord(start, 0));
     block_count = (N + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
-    AddKernel << <1, N * D>> > (dev_clusters, dev_vectors, dev_belonging, *dev_n, *dev_d, *dev_k);
+    AddKernel << <block_count, THREADS_PER_BLOCK>> > (dev_clusters, dev_vectors, dev_belonging, *dev_n, *dev_d, *dev_k);
     calculateElapsedTime(start, stop, &milliseconds, "Adding v1");
 
+    gpuErrchk(cudaEventRecord(start, 0));
+    block_count = (N + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
+    AddKernel2 << <block_count, THREADS_PER_BLOCK, K * D * sizeof(float) >> > (dev_clusters, dev_vectors, dev_belonging, *dev_n, *dev_d, *dev_k);
+    calculateElapsedTime(start, stop, &milliseconds, "Adding v2");
 
     //-------------------------------
     //         END OF LOGIC
