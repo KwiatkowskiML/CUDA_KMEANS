@@ -113,7 +113,18 @@ void Vectors::PrintBelonging()
 }
 
 Vectors::~Vectors() {
-    delete[] vectors;
-    delete[] clusters;
-    delete[] belonging;
+    if (vectors != nullptr) {
+        delete[] vectors;
+        vectors = nullptr; 
+    }
+
+    if (clusters != nullptr) {
+        delete[] clusters;
+        clusters = nullptr; 
+    }
+
+    if (belonging != nullptr) {
+        delete[] belonging;
+        belonging = nullptr; 
+    }
 }

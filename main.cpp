@@ -1,9 +1,7 @@
-#include <stdio.h>
-#include <iomanip>
 #include "Vectors.h"
-//#include "gpu1.cuh"
-#include "gpu2.cuh"
 #include "HostConstants.h"
+
+#include "GpuKmeans1.h"
 
 int main() {
     Vectors vectorsStorage;
@@ -12,25 +10,8 @@ int main() {
         return 1;
     }
 
-    fprintf(stdout, "Number of points: %d\n", vectorsStorage.getNumPoints());
-    fprintf(stdout, "Number of dimensions: %d\n", vectorsStorage.getNumDimensions());
-    fprintf(stdout, "Number of clusters: %d\n", vectorsStorage.getNumClusters());
-
-    float* clusters = vectorsStorage.clusters;
-    int* belonging = vectorsStorage.belonging;
-    float* vectors = vectorsStorage.vectors;
-
-    int N = vectorsStorage.getNumPoints();
-    int K = vectorsStorage.getNumClusters();
-    int D = vectorsStorage.getNumDimensions();
-
-/*    vectorsStorage.PrintVectors();
-    vectorsStorage.PrintClusters()*/;
-
-    CalculateKmean2(clusters, vectors, belonging, N, K, D);
-
-    //vectorsStorage.PrintClusters();
-    //vectorsStorage.PrintBelonging();
+    GpuKmeans1 kmeans(vectorsStorage);
+    kmeans.CalculateKmeans();
 
     return 0;
 }
