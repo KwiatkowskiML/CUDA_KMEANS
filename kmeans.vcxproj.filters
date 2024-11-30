@@ -24,6 +24,9 @@
     <CudaCompile Include="gpu2.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>
+    <CudaCompile Include="GpuKmeans1.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Vectors.h">
@@ -44,7 +47,7 @@
     <ClInclude Include="KmeansCalculator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GpuKmeans1.h">
+    <ClInclude Include="GpuKmeans1.cuh">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -53,9 +56,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="KmeansCalculator.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="GpuKmeans1.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

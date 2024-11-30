@@ -142,13 +142,15 @@
     <ClInclude Include="gpu1.cuh" />
     <ClInclude Include="DeviceConstants.cuh" />
     <ClInclude Include="gpu2.cuh" />
-    <ClInclude Include="GpuKmeans1.h" />
+    <ClInclude Include="GpuKmeans1.cuh" />
     <ClInclude Include="HostConstants.h" />
     <ClInclude Include="KmeansCalculator.h" />
     <ClInclude Include="Vectors.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="GpuKmeans1.cpp" />
+    <CudaCompile Include="GpuKmeans1.cu">
+      <FileType>Document</FileType>
+    </CudaCompile>
     <ClCompile Include="KmeansCalculator.cpp" />
     <ClCompile Include="Vectors.cpp" />
   </ItemGroup>

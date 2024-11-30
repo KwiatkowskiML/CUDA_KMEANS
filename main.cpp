@@ -1,7 +1,7 @@
 #include "Vectors.h"
 #include "HostConstants.h"
 
-#include "GpuKmeans1.h"
+#include "GpuKmeans1.cuh"
 
 int main() {
     Vectors vectorsStorage;
