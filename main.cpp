@@ -1,8 +1,7 @@
 #include <stdio.h>
 #include <iomanip>
-#include "vector_add_kernel.cuh"
 #include "Vectors.h"
-#include "gpu1.cuh"
+//#include "gpu1.cuh"
 #include "gpu2.cuh"
 #include "HostConstants.h"
 

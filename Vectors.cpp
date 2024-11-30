@@ -53,6 +53,11 @@ Error:
     return false;
 }
 
+bool Vectors::readFromBytesfile(const std::string& filename)
+{
+    return false;
+}
+
 int Vectors::getNumPoints() const {
     return N;
 }

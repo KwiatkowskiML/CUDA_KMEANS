@@ -110,6 +110,9 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <CudaCompile>
+      <CodeGeneration>compute_70,sm_70</CodeGeneration>
+    </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -126,12 +129,14 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <CudaCompile>
+      <CodeGeneration>compute_70,sm_70</CodeGeneration>
+    </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
     <CudaCompile Include="gpu1.cu" />
     <CudaCompile Include="gpu2.cu" />
     <CudaCompile Include="main.cpp" />
-    <CudaCompile Include="vector_add_kernel.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="gpu1.cuh" />
@@ -139,7 +144,6 @@
     <ClInclude Include="gpu2.cuh" />
     <ClInclude Include="HostConstants.h" />
     <ClInclude Include="Vectors.h" />
-    <ClInclude Include="vector_add_kernel.cuh" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Vectors.cpp" />

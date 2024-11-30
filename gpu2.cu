@@ -24,7 +24,8 @@ void calculateElapsedTime(cudaEvent_t start, cudaEvent_t stop, float* millisecon
     fprintf(stdout, "%s: %f\n", message, *milliseconds);
 }
 
-__global__ void CalculateBelongings2(const float* clusters, const float* vectors, int* belonging, const int& N, const int& D, const int& K)
+// without shared memory
+__global__ void CalculateBelongings2(const float* clusters, const float* vectors, int* belonging, int* cluster_count, const int& N, const int& D, const int& K)
 {
     int idx = blockDim.x * blockIdx.x + threadIdx.x;
 
@@ -46,8 +47,44 @@ __global__ void CalculateBelongings2(const float* clusters, const float* vectors
         }
     }
     belonging[idx] = min_cluster;
+    atomicAdd(cluster_count + min_cluster, 1);
 }
 
+// with shared memory
+//__global__ void CalculateBelongings2_v2(const float* vectors, int* belonging, const int& N, const int& D, const int& K)
+//{
+//    extern __shared__ float shared_clusters[];
+//
+//    int idx = blockDim.x * blockIdx.x + threadIdx.x;
+//
+//    if (idx < K * D)
+//    {
+//
+//    }
+//
+//    __syncthreads();
+//
+//    if (idx >= N)
+//        return;
+//
+//    int min_cluster = 0;
+//    float min_distance = FLT_MAX;
+//
+//    for (int i = 0; i < K; i++) {
+//        float distance = 0.0f;
+//        for (int j = 0; j < D; j++) {
+//            float diff = vectors[idx + j * N] - clusters[i + j * K];
+//            distance += diff * diff;
+//        }
+//        if (distance < min_distance) {
+//            min_distance = distance;
+//            min_cluster = i;
+//        }
+//    }
+//    belonging[idx] = min_cluster;
+//}
+
+// simple atomic add
 __global__ void AddKernel(float* clusters, const float* vectors, const int* belonging, const int& N, const int& D, const int& K)
 {
     int idx = blockDim.x * blockIdx.x + threadIdx.x;
@@ -75,7 +112,7 @@ __global__ void AddKernel2(float* clusters, const float* vectors, const int* bel
 
         int cluster_id = belonging[vec_idx];
         int cluster_offset = cord_idx * K + cluster_id;
-        atomicAdd(shared_clusters + cluster_offset, vectors[idx]);
+        atomicAdd_block(shared_clusters + cluster_offset, vectors[idx]);
     }
 
     __syncthreads();
@@ -95,7 +132,6 @@ void CalculateKmean2(float* clusters, const float* vectors, int* belonging, int 
     int* dev_k = 0;
     int* dev_d = 0;
     int* dev_cluster_count = 0;
-    thrust::device_vector<int> vector_order(N);
 
     //-------------------------------
     //      TIME MEASUREMENT
@@ -138,7 +174,7 @@ void CalculateKmean2(float* clusters, const float* vectors, int* belonging, int 
 
     gpuErrchk(cudaEventRecord(start, 0));
     int block_count = (N + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
-    CalculateBelongings2 << <block_count, THREADS_PER_BLOCK >> > (dev_clusters, dev_vectors, dev_belonging, *dev_n, *dev_d, *dev_k);
+    CalculateBelongings2 << <block_count, THREADS_PER_BLOCK >> > (dev_clusters, dev_vectors, dev_belonging, dev_cluster_count, *dev_n, *dev_d, *dev_k);
     calculateElapsedTime(start, stop, &milliseconds, "Belonging");
 
     gpuErrchk(cudaMemset(dev_clusters, 0, K * D * sizeof(float)));

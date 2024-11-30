@@ -18,9 +18,6 @@
     <CudaCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </CudaCompile>
-    <CudaCompile Include="vector_add_kernel.cu">
-      <Filter>Source Files</Filter>
-    </CudaCompile>
     <CudaCompile Include="gpu1.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>
@@ -29,9 +26,6 @@
     </CudaCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="vector_add_kernel.cuh">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Vectors.h">
       <Filter>Header Files</Filter>
     </ClInclude>

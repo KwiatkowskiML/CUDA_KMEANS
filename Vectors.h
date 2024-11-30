@@ -8,6 +8,7 @@ public:
     int* belonging;
     
     bool readFromTextFile(const std::string& filename);
+    bool readFromBytesfile(const std::string& filename);
     int getNumPoints() const;
     int getNumDimensions() const;
     int getNumClusters() const;
