@@ -9,6 +9,7 @@ public:
     
     bool readFromTextFile(const std::string& filename);
     bool readFromBytesfile(const std::string& filename);
+    bool readFromFile(const std::string& filename);
     int getNumPoints() const;
     int getNumDimensions() const;
     int getNumClusters() const;
@@ -16,6 +17,7 @@ public:
     void PrintClusters();
     void PrintVectors();
     void PrintBelonging();
+    void WriteResults(const std::string& filename);
 
     ~Vectors();
 

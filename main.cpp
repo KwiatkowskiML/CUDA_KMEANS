@@ -6,13 +6,14 @@
 
 int main() {
     Vectors vectorsStorage;
-    if (!vectorsStorage.readFromTextFile(FILE_PATH)) {
+    if (!vectorsStorage.readFromFile(INPUT_FILE_PATH)) {
         fprintf(stderr, "Failed to read input file.\n");
         return 1;
     }
 
     GpuKmeans2 kmeans(vectorsStorage);
     kmeans.CalculateKmeans();
+    vectorsStorage.WriteResults(OUTPUT_FILE_PATH);
 
     return 0;
 }
