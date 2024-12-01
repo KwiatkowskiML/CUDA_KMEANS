@@ -8,11 +8,11 @@
 
 class KmeansCalculator {
 protected:
-    Vectors* vectors;
+    Vectors* vectorsStorage;
     void calculateElapsedTime(cudaEvent_t start, cudaEvent_t stop, float* milliseconds, const char* message);
 
 public:
-    KmeansCalculator(Vectors& inputVectors): vectors(&inputVectors){}
+    KmeansCalculator(Vectors& inputVectors): vectorsStorage(&inputVectors){}
 
     virtual ~KmeansCalculator() = default;
 

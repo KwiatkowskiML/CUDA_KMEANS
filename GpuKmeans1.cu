@@ -68,12 +68,12 @@ __global__ void AddKernel2(float* clusters, const float* vectors, const int* bel
 
 void GpuKmeans1::CalculateKmeans()
 {
-    int N = vectors->getNumPoints();
-    int D = vectors->getNumDimensions();
-    int K = vectors->getNumClusters();
-    float* vectors_array = vectors->vectors;
-    float* clusters = vectors->clusters;
-    int* belonging = vectors->belonging;
+    int N = vectorsStorage->getNumPoints();
+    int D = vectorsStorage->getNumDimensions();
+    int K = vectorsStorage->getNumClusters();
+    float* vectors_array = vectorsStorage->vectors;
+    float* clusters = vectorsStorage->clusters;
+    int* belonging = vectorsStorage->belonging;
 
     float* dev_clusters = 0;
     float* dev_vectors = 0;

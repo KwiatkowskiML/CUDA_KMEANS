@@ -46,12 +46,12 @@ __global__ void CalculateClusters2(float* clusters, const int* cluster_count, co
 
 void GpuKmeans2::CalculateKmeans()
 {
-    int N = vectors->getNumPoints();
-    int D = vectors->getNumDimensions();
-    int K = vectors->getNumClusters();
-    float* vectors_array = vectors->vectors;
-    float* clusters = vectors->clusters;
-    int* belonging = vectors->belonging;
+    int N = vectorsStorage->getNumPoints();
+    int D = vectorsStorage->getNumDimensions();
+    int K = vectorsStorage->getNumClusters();
+    float* vectors = vectorsStorage->vectors;
+    float* clusters = vectorsStorage->clusters;
+    int* belonging = vectorsStorage->belonging;
 
     float* dev_clusters = 0;
     float* dev_vectors = 0;
