@@ -2,6 +2,7 @@
 #include "Vectors.h"
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
+#include "HostConstants.h"
 
 #define gpuErrchk(ans) { KmeansCalculator::gpuAssert((ans), __FILE__, __LINE__); }
 

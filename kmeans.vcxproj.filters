@@ -18,13 +18,10 @@
     <CudaCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </CudaCompile>
-    <CudaCompile Include="gpu1.cu">
-      <Filter>Source Files</Filter>
-    </CudaCompile>
-    <CudaCompile Include="gpu2.cu">
-      <Filter>Source Files</Filter>
-    </CudaCompile>
     <CudaCompile Include="GpuKmeans1.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="GpuKmeans2.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>
   </ItemGroup>
@@ -38,16 +35,13 @@
     <ClInclude Include="DeviceConstants.cuh">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="gpu1.cuh">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="gpu2.cuh">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="KmeansCalculator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GpuKmeans1.cuh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GpuKmeans2.cuh">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

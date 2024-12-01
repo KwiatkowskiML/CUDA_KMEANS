@@ -2,6 +2,7 @@
 #include "HostConstants.h"
 
 #include "GpuKmeans1.cuh"
+#include "GpuKmeans2.cuh"
 
 int main() {
     Vectors vectorsStorage;
@@ -10,7 +11,7 @@ int main() {
         return 1;
     }
 
-    GpuKmeans1 kmeans(vectorsStorage);
+    GpuKmeans2 kmeans(vectorsStorage);
     kmeans.CalculateKmeans();
 
     return 0;

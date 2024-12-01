@@ -134,21 +134,21 @@
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CudaCompile Include="gpu1.cu" />
-    <CudaCompile Include="gpu2.cu" />
     <CudaCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="gpu1.cuh" />
     <ClInclude Include="DeviceConstants.cuh" />
-    <ClInclude Include="gpu2.cuh" />
     <ClInclude Include="GpuKmeans1.cuh" />
+    <ClInclude Include="GpuKmeans2.cuh" />
     <ClInclude Include="HostConstants.h" />
     <ClInclude Include="KmeansCalculator.h" />
     <ClInclude Include="Vectors.h" />
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="GpuKmeans1.cu">
+      <FileType>Document</FileType>
+    </CudaCompile>
+    <CudaCompile Include="GpuKmeans2.cu">
       <FileType>Document</FileType>
     </CudaCompile>
     <ClCompile Include="KmeansCalculator.cpp" />
