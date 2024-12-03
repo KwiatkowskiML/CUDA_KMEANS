@@ -18,5 +18,5 @@ public:
 
     virtual void CalculateKmeans() = 0;
 
-    inline static void gpuAssert(cudaError_t code, const char* file, int line, bool abort = true);
+    void gpuAssert(cudaError_t code, const char* file, int line, bool abort = true);
 };

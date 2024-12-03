@@ -96,6 +96,7 @@ void GpuKmeans1::CalculateKmeans()
     //      DATA PREPARATION
     //-------------------------------
 
+    // Device setup
     gpuErrchk(cudaSetDevice(0));
 
     // Memory allocation on the side of the device
@@ -129,15 +130,15 @@ void GpuKmeans1::CalculateKmeans()
 
     gpuErrchk(cudaMemset(dev_clusters, 0, K * D * sizeof(float)));
 
-    gpuErrchk(cudaEventRecord(start, 0));
-    block_count = (N + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
-    AddKernel << <block_count, THREADS_PER_BLOCK >> > (dev_clusters, dev_vectors, dev_belonging, *dev_n, *dev_d, *dev_k);
-    calculateElapsedTime(start, stop, &milliseconds, "Adding v1");
+    //gpuErrchk(cudaEventRecord(start, 0));
+    //block_count = (N + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
+    //AddKernel << <block_count, THREADS_PER_BLOCK >> > (dev_clusters, dev_vectors, dev_belonging, *dev_n, *dev_d, *dev_k);
+    //calculateElapsedTime(start, stop, &milliseconds, "Adding v1");
 
     gpuErrchk(cudaEventRecord(start, 0));
     block_count = (N + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
     AddKernel2 << <block_count, THREADS_PER_BLOCK, K* D * sizeof(float) >> > (dev_clusters, dev_vectors, dev_belonging, *dev_n, *dev_d, *dev_k);
-    calculateElapsedTime(start, stop, &milliseconds, "Adding v2");
+    calculateElapsedTime(start, stop, &milliseconds, "Adding");
 
 
     //-------------------------------

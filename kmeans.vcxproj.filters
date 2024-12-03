@@ -44,12 +44,18 @@
     <ClInclude Include="GpuKmeans2.cuh">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="CpuKmeans.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Vectors.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="KmeansCalculator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CpuKmeans.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

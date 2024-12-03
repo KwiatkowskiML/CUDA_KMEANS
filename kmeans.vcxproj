@@ -137,6 +137,7 @@
     <CudaCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CpuKmeans.h" />
     <ClInclude Include="DeviceConstants.cuh" />
     <ClInclude Include="GpuKmeans1.cuh" />
     <ClInclude Include="GpuKmeans2.cuh" />
@@ -151,6 +152,7 @@
     <CudaCompile Include="GpuKmeans2.cu">
       <FileType>Document</FileType>
     </CudaCompile>
+    <ClCompile Include="CpuKmeans.cpp" />
     <ClCompile Include="KmeansCalculator.cpp" />
     <ClCompile Include="Vectors.cpp" />
   </ItemGroup>

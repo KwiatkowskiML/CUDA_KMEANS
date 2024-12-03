@@ -8,7 +8,7 @@ void KmeansCalculator::calculateElapsedTime(cudaEvent_t start, cudaEvent_t stop,
     fprintf(stdout, "%s: %f\n", message, *milliseconds);
 }
 
-inline void KmeansCalculator::gpuAssert(cudaError_t code, const char* file, int line, bool abort)
+void KmeansCalculator::gpuAssert(cudaError_t code, const char* file, int line, bool abort)
 {
     if (code != cudaSuccess)
     {
