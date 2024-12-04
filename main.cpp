@@ -22,7 +22,7 @@ int main() {
     time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
     printf("Reading data took %lld ms\n", time);
 
-    GpuKmeans2 kmeans(vectorsStorage);
+    GpuKmeans1 kmeans(vectorsStorage);
     printf("Computing kmeans...\n");
     start_time = std::chrono::high_resolution_clock::now();
     kmeans.CalculateKmeans();
