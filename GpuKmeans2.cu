@@ -6,8 +6,6 @@
 #include <thrust/execution_policy.h>
 #include <thrust/sort.h>
 
-#include "DeviceConstants.cuh"
-
 //#define DEEP_TIME_ANALYSIS
 
 __global__ void CalculateBelongings2(const float* clusters, const float* vectors, int* belonging, const int& N, const int& D, const int& K, int* vectors_moved)
@@ -34,11 +32,12 @@ __global__ void CalculateBelongings2(const float* clusters, const float* vectors
 
     if (belonging[idx] != min_cluster)
     {
-        vectors_moved[idx] = 1;
-        for (int i = 0; i < D; i++)
-        {
-            belonging[idx + i * N] = i * K + min_cluster;
-        }
+        vectors_moved[idx] = 1;   
+    }
+
+    for (int i = 0; i < D; i++)
+    {
+        belonging[idx + i * N] = i * K + min_cluster;
     }
 }
 
@@ -195,7 +194,7 @@ void GpuKmeans2::CalculateKmeans()
 
         // increment iteration count
         iter++;
-    } while (vectors_moved_count > 0 && iter < 100);
+    } while (vectors_moved_count > 0 && iter < MAX_ITERATIONS);
 
     //-------------------------------
     //         END OF LOGIC
@@ -223,7 +222,5 @@ void GpuKmeans2::CalculateKmeans()
     gpuErrchk(cudaFree(dev_d));
     gpuErrchk(cudaEventDestroy(start));
     gpuErrchk(cudaEventDestroy(stop));
-
-    // temp
     gpuErrchk(cudaFree(dev_vectors_moved));
 }
