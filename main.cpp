@@ -23,6 +23,8 @@ int main() {
     printf("Reading data took %lld ms\n", time);
 
     GpuKmeans1 kmeans(vectorsStorage);
+    //GpuKmeans2 kmeans(vectorsStorage);
+    //CpuKmeans kmeans(vectorsStorage);
     printf("Computing kmeans...\n");
     start_time = std::chrono::high_resolution_clock::now();
     kmeans.CalculateKmeans();

@@ -5,7 +5,6 @@
 #include <thrust/reduce.h>
 #include <thrust/execution_policy.h>
 
-
 __global__ void CalculateBelongings(const float* clusters, const float* vectors, int* belonging, int* cluster_count, const int& N, const int& D, const int& K, int* vectors_moved)
 {
     int idx =  blockDim.x* blockIdx.x + threadIdx.x;
@@ -66,7 +65,7 @@ __global__ void AddKernel2(float* clusters, const float* vectors, const int* bel
 
         int cluster_id = belonging[vec_idx];
         int cluster_offset = cord_idx * K + cluster_id;
-        atomicAdd(shared_clusters + cluster_offset, vectors[idx]);
+        atomicAdd_block(shared_clusters + cluster_offset, vectors[idx]);
     }
 
     __syncthreads();
@@ -158,6 +157,7 @@ void GpuKmeans1::CalculateKmeans()
 
     do {
         gpuErrchk(cudaMemset(dev_vectors_moved, 0, N * sizeof(int)));
+        gpuErrchk(cudaMemset(dev_cluster_count, 0, K * sizeof(int)));
 
 #ifdef DEEP_TIME_ANALYTICS
         gpuErrchk(cudaEventRecord(start, 0));
@@ -192,7 +192,6 @@ void GpuKmeans1::CalculateKmeans()
         // Sum vectors in each cluster
         block_count = (N * D + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
         AddKernel2 << <block_count, THREADS_PER_BLOCK, K * D * sizeof(float) >> > (dev_clusters, dev_vectors, dev_belonging, *dev_n, *dev_d, *dev_k);
-
         // AddKernel << <block_count, THREADS_PER_BLOCK >> > (dev_clusters, dev_vectors, dev_belonging, *dev_n, *dev_d, *dev_k);
 
 
@@ -219,7 +218,6 @@ void GpuKmeans1::CalculateKmeans()
     // error checking and synchronization
     gpuErrchk(cudaGetLastError());
     gpuErrchk(cudaDeviceSynchronize());
-
 
     // Copy memory back to the host
     gpuErrchk(cudaMemcpy(clusters, dev_clusters, K * D * sizeof(float), cudaMemcpyDeviceToHost));
