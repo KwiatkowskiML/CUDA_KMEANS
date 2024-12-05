@@ -5,11 +5,12 @@
 #include "HostConstants.h"
 
 #define gpuErrchk(ans) { KmeansCalculator::gpuAssert((ans), __FILE__, __LINE__); }
+#define gpuError(cudaStatus) { printf("Error: %s, file: %s, line: %d\n", cudaGetErrorString(cudaStatus), __FILE__, __LINE__); }
 
 class KmeansCalculator {
 protected:
     Vectors* vectorsStorage;
-    void calculateElapsedTime(cudaEvent_t start, cudaEvent_t stop, float* milliseconds, const char* message);
+    cudaError_t calculateElapsedTime(cudaEvent_t start, cudaEvent_t stop, float* milliseconds, const char* message);
 
 public:
     KmeansCalculator(Vectors& inputVectors): vectorsStorage(&inputVectors){}

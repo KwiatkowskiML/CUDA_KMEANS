@@ -57,6 +57,7 @@ void GpuKmeans2::CalculateKmeans()
     float* clusters = vectorsStorage->clusters;
     int* belonging = vectorsStorage->belonging;
     int vectors_moved_count = 0;
+    float milliseconds = 0;
 
     float* dev_clusters = 0;
     float* dev_vectors = 0;
@@ -65,18 +66,17 @@ void GpuKmeans2::CalculateKmeans()
     int* dev_k = 0;
     int* dev_d = 0;
     int* dev_cluster_count = 0;
+    int* dev_vectors_moved = 0;
     thrust::device_vector<int> vector_order(N);
 
     // temp
-    int* dev_vectors_moved = 0;
     gpuErrchk(cudaMalloc((void**)&dev_vectors_moved, N * sizeof(int)));
     gpuErrchk(cudaMemset(dev_vectors_moved, 0, N * sizeof(int)));
 
     //-------------------------------
     //      TIME MEASUREMENT
     //-------------------------------
-
-    float milliseconds = 0;
+    
     cudaEvent_t start, stop;
     cudaEventCreate(&start);
     cudaEventCreate(&stop);

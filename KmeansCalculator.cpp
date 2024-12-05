@@ -1,12 +1,24 @@
 #include "KmeansCalculator.h"
 #include "CpuKmeans.h"
 
-void KmeansCalculator::calculateElapsedTime(cudaEvent_t start, cudaEvent_t stop, float* milliseconds, const char* message)
+cudaError_t KmeansCalculator::calculateElapsedTime(cudaEvent_t start, cudaEvent_t stop, float* milliseconds, const char* message)
 {
-    gpuErrchk(cudaEventRecord(stop, 0));
-    gpuErrchk(cudaEventSynchronize(stop));
-    gpuErrchk(cudaEventElapsedTime(milliseconds, start, stop));
+    cudaError_t cudaStatus;
+
+    cudaStatus = cudaEventRecord(stop, 0);
+    if (cudaStatus != cudaSuccess)
+        return cudaStatus;
+
+    cudaStatus = cudaEventSynchronize(stop);
+    if (cudaStatus != cudaSuccess)
+        return cudaStatus;
+
+    cudaStatus = cudaEventElapsedTime(milliseconds, start, stop);
+    if (cudaStatus != cudaSuccess)
+        return cudaStatus;
+
     fprintf(stdout, "%s: %f ms\n", message, *milliseconds);
+    return cudaStatus;
 }
 
 void KmeansCalculator::gpuAssert(cudaError_t code, const char* file, int line, bool abort)
