@@ -120,7 +120,7 @@ Error:
     return false;
 }
 
-bool Vectors::readFromFile(const std::string& filename)
+bool Vectors::readFromFile(bool is_txt, const std::string& filename)
 {
     size_t dotPos = filename.find_last_of('.');
     if (dotPos == std::string::npos) {
@@ -129,15 +129,11 @@ bool Vectors::readFromFile(const std::string& filename)
     }
 
     std::string extension = filename.substr(dotPos + 1);
-    if (extension == "txt") {
+    if (is_txt) {
         return readFromTextFile(filename);
     }
-    else if (extension == "dat") {
-        return readFromBytesfile(filename);
-    }
     else {
-        fprintf(stderr, "Unsupported file type: %s\n", filename.c_str());
-        return false;
+        return readFromBytesfile(filename);
     }
 }
 

@@ -9,7 +9,7 @@ public:
     
     bool readFromTextFile(const std::string& filename);
     bool readFromBytesfile(const std::string& filename);
-    bool readFromFile(const std::string& filename);
+    bool readFromFile(bool is_txt, const std::string& filename);
     int getNumPoints() const;
     int getNumDimensions() const;
     int getNumClusters() const;

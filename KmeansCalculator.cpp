@@ -1,4 +1,5 @@
 #include "KmeansCalculator.h"
+#include "CpuKmeans.h"
 
 void KmeansCalculator::calculateElapsedTime(cudaEvent_t start, cudaEvent_t stop, float* milliseconds, const char* message)
 {
