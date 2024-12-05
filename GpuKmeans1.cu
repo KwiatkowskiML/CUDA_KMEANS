@@ -36,6 +36,45 @@ __global__ void CalculateBelongings(const float* clusters, const float* vectors,
     atomicAdd(cluster_count + min_cluster, 1);
 }
 
+__global__ void CalculateBelongingsShared(const float* clusters, const float* vectors, int* belonging, int* cluster_count, const int& N, const int& D, const int& K, int* vectors_moved)
+{
+    extern __shared__ float shared_clusters[];
+    int idx = blockDim.x * blockIdx.x + threadIdx.x;
+
+    if (idx >= N)
+        return;
+
+    if (threadIdx.x < K * D)
+    {
+        shared_clusters[threadIdx.x] = clusters[threadIdx.x];
+    }
+
+    __syncthreads();
+
+    int min_cluster = 0;
+    float min_distance = FLT_MAX;
+
+    for (int i = 0; i < K; i++) {
+        float distance = 0.0f;
+        for (int j = 0; j < D; j++) {
+            float diff = vectors[idx + j * N] - shared_clusters[i + j * K];
+            distance += diff * diff;
+        }
+        if (distance < min_distance) {
+            min_distance = distance;
+            min_cluster = i;
+        }
+    }
+
+    if (belonging[idx] != min_cluster)
+    {
+        belonging[idx] = min_cluster;
+        vectors_moved[idx] = 1;
+    }
+
+    atomicAdd(cluster_count + min_cluster, 1);
+}
+
 __global__ void CalculateClusters(float* clusters, const int* cluster_count, const int& D, const int& K)
 {
     int idx = blockDim.x * blockIdx.x + threadIdx.x;
@@ -70,7 +109,7 @@ __global__ void AddKernel2(float* clusters, const float* vectors, const int* bel
 
     __syncthreads();
 
-    if (threadIdx.x < K * D)
+    if (threadIdx.x < K * D && shared_clusters[threadIdx.x] != 0)
     {
         atomicAdd(clusters + threadIdx.x, shared_clusters[threadIdx.x]);
     }
@@ -165,7 +204,8 @@ void GpuKmeans1::CalculateKmeans()
 
         // find closest cluster for each vector
         int block_count = (N + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
-        CalculateBelongings << <block_count, THREADS_PER_BLOCK >> > (dev_clusters, dev_vectors, dev_belonging, dev_cluster_count, *dev_n, *dev_d, *dev_k, dev_vectors_moved);
+        // CalculateBelongings << <block_count, THREADS_PER_BLOCK >> > (dev_clusters, dev_vectors, dev_belonging, dev_cluster_count, *dev_n, *dev_d, *dev_k, dev_vectors_moved);
+        CalculateBelongingsShared << <block_count, THREADS_PER_BLOCK, K* D * sizeof(float) >> > (dev_clusters, dev_vectors, dev_belonging, dev_cluster_count, *dev_n, *dev_d, *dev_k, dev_vectors_moved);
 
 #ifdef DEEP_TIME_ANALYTICS
         calculateElapsedTime(start, stop, &milliseconds, "Belonging calculation");
