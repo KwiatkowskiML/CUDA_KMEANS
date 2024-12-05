@@ -6,7 +6,7 @@
 #include <thrust/execution_policy.h>
 #include <thrust/sort.h>
 
-#define DEEP_TIME_ANALYSIS
+// #define DEEP_TIME_ANALYSIS
 
 __global__ void CalculateBelongings2(const float* clusters, const float* vectors, int* belonging, const int& N, const int& D, const int& K, int* vectors_moved)
 {
@@ -71,11 +71,11 @@ void GpuKmeans2::CalculateKmeans()
     thrust::device_vector<int> vector_order(N);
     cudaError_t cudaStatus;
 
-    // pointers initialization
-    thrust::device_ptr<int> keys(dev_belonging);
-    thrust::device_ptr<float> vals(dev_vectors);
-    thrust::device_ptr<float> clusters_ptr(dev_clusters);
-    thrust::device_ptr<int> cluster_count_ptr(dev_cluster_count);
+    // pointers and iterators declaration
+    thrust::device_ptr<int> keys;
+    thrust::device_ptr<float> vals;
+    thrust::device_ptr<float> clusters_ptr;
+    thrust::device_ptr<int> cluster_count_ptr;
     thrust::constant_iterator<int> const_iter(1);
     thrust::counting_iterator<int> count_iter(0);
     thrust::equal_to<int> binary_pred;
@@ -241,6 +241,13 @@ void GpuKmeans2::CalculateKmeans()
         goto Error;
     }    
 
+    // pointers initialization
+    keys = thrust::device_ptr<int>(dev_belonging);
+    vals = thrust::device_ptr<float>(dev_vectors);
+    clusters_ptr = thrust::device_ptr<float>(dev_clusters);
+    cluster_count_ptr = thrust::device_ptr<int>(dev_cluster_count);    
+    thrust::copy(count_iter, count_iter + N, vector_order.begin());
+
     //-------------------------------
     //            LOGIC
     //-------------------------------
@@ -328,9 +335,7 @@ void GpuKmeans2::CalculateKmeans()
         }
 #endif
         // sorting the order of vectors to keep track of the initial vector order
-        printf("test\n");
         thrust::sort_by_key(keys, keys + N, thrust::make_zip_iterator(thrust::make_tuple(vector_order.begin(), vals)));
-        printf("test\n");
 
 #ifdef DEEP_TIME_ANALYSIS
         cudaStatus = calculateElapsedTime(start, stop, &milliseconds, "Sorting vector order");
