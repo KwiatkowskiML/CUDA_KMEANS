@@ -7,7 +7,7 @@
 
 __global__ void CalculateBelongings(const float* clusters, const float* vectors, int* belonging, int* cluster_count, const int& N, const int& D, const int& K, int* vectors_moved)
 {
-    int idx =  blockDim.x* blockIdx.x + threadIdx.x;
+    int idx =  blockDim.x * blockIdx.x + threadIdx.x;
 
     if (idx >= N)
         return;
@@ -75,14 +75,11 @@ __global__ void CalculateBelongingsShared(const float* clusters, const float* ve
     atomicAdd(cluster_count + min_cluster, 1);
 }
 
-__global__ void CalculateClusters(float* clusters, const int* cluster_count, const int& D, const int& K)
+__global__ void CalculateClusterMean(float* clusters, const int* cluster_count, const int& D, const int& K)
 {
     int idx = blockDim.x * blockIdx.x + threadIdx.x;
-
-    for (int i = 0; i < D; i++)
-    {
-        clusters[idx + K * i] /= cluster_count[idx];
-    }
+    int cluster_id = idx % K;
+    clusters[idx] /= cluster_count[cluster_id];
 }
 
 __global__ void AddKernel2(float* clusters, const float* vectors, const int* belonging, const int& N, const int& D, const int& K)
@@ -241,7 +238,7 @@ void GpuKmeans1::CalculateKmeans()
 #endif
 
         // Calculate each cluster's mean
-        CalculateClusters << <1, K >> > (dev_clusters, dev_cluster_count, *dev_d, *dev_k);
+        CalculateClusterMean << <1, K * D>> > (dev_clusters, dev_cluster_count, *dev_d, *dev_k);
 
 #ifdef DEEP_TIME_ANALYTICS
         calculateElapsedTime(start, stop, &milliseconds, "Calculating cluster means");
