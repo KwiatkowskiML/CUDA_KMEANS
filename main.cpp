@@ -78,12 +78,7 @@ int main(int argc, char* argv[]) {
     //        Compute kmeans
     //----------------------------------
 
-    printf("Computing kmeans...\n");
-    start_time = std::chrono::high_resolution_clock::now();
     kmeansCalculator->CalculateKmeans();
-    end_time = std::chrono::high_resolution_clock::now();
-    time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
-    printf("Computing kmeans took %lld ms\n", time);
 
     //--------------------------------
     //       Writing data

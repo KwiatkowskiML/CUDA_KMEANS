@@ -1,4 +1,5 @@
 #include "CpuKmeans.h"
+#include <chrono>
 
 int CpuKmeans::CalculateBelongingCpu(const float* vectors, const float* clusters, int* belonging, int* cluster_count, const int& N, const int& D, const int& K)
 {
@@ -57,6 +58,9 @@ void CpuKmeans::CalculateClusters(const float* vectors, float* clusters, const i
 
 void CpuKmeans::CalculateKmeans()
 {
+    std::chrono::steady_clock::time_point start_time, end_time;
+    long long time;
+
     int N = vectorsStorage->getNumPoints();
     int D = vectorsStorage->getNumDimensions();
     int K = vectorsStorage->getNumClusters();
@@ -65,6 +69,9 @@ void CpuKmeans::CalculateKmeans()
     int* belonging = vectorsStorage->belonging;
     int* cluster_count = new int[K];
     int cluster_changes = 0;
+
+    start_time = std::chrono::high_resolution_clock::now();
+    printf("Calculating kmeans...\n");
 
     for (int i = 0; i < MAX_ITERATIONS; i++)
     {
@@ -78,6 +85,10 @@ void CpuKmeans::CalculateKmeans()
         memset(clusters, 0, K * D * sizeof(float));
         CalculateClusters(vectors, clusters, belonging, cluster_count, N, D, K);
     }
+
+    end_time = std::chrono::high_resolution_clock::now();
+    time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+    printf("Calculating kmeans took %lld ms\n", time);
 
     delete[] cluster_count;
 }

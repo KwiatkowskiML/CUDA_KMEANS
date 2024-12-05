@@ -162,6 +162,10 @@ void GpuKmeans1::CalculateKmeans()
     // Device setup
     gpuErrchk(cudaSetDevice(0));
 
+    // time measurment
+    printf("Copying data...\n");
+    gpuErrchk(cudaEventRecord(start, 0));
+
     // Memory allocation on the side of the device
     gpuErrchk(cudaMalloc((void**)&dev_clusters, K * D * sizeof(float)));
     gpuErrchk(cudaMalloc((void**)&dev_vectors, N * D * sizeof(float)));
@@ -181,13 +185,18 @@ void GpuKmeans1::CalculateKmeans()
     gpuErrchk(cudaMemcpy(dev_d, &D, sizeof(int), cudaMemcpyHostToDevice));
     gpuErrchk(cudaMemset(dev_cluster_count, 0, K * sizeof(int)));
 
-    // pointers initialization
+    // time measurment
+    calculateElapsedTime(start, stop, &milliseconds, "Copying data from host to device took");
 
     //-------------------------------
     //            LOGIC
     //-------------------------------
 
-    printf("\nStarting calculation\n");
+#ifndef DEEP_TIME_ANALYSIS
+    printf("Calculating kmeans...\n");
+    gpuErrchk(cudaEventRecord(start, 0));
+#endif
+
     int iter = 0;
     int vectors_moved_count;
 
@@ -247,6 +256,10 @@ void GpuKmeans1::CalculateKmeans()
         iter++;
     } while (iter < MAX_ITERATIONS && vectors_moved_count > 0);
 
+#ifndef DEEP_TIME_ANALYSIS
+    calculateElapsedTime(start, stop, &milliseconds, "Calculating kmeans took");
+    gpuErrchk(cudaEventRecord(start, 0));
+#endif
 
     //-------------------------------
     //         END OF LOGIC
@@ -256,9 +269,16 @@ void GpuKmeans1::CalculateKmeans()
     gpuErrchk(cudaGetLastError());
     gpuErrchk(cudaDeviceSynchronize());
 
+    // copying time
+    printf("Copying data...\n");
+    gpuErrchk(cudaEventRecord(start, 0));
+
     // Copy memory back to the host
     gpuErrchk(cudaMemcpy(clusters, dev_clusters, K * D * sizeof(float), cudaMemcpyDeviceToHost));
     gpuErrchk(cudaMemcpy(belonging, dev_belonging, N * sizeof(int), cudaMemcpyDeviceToHost));
+
+    // time measurment
+    calculateElapsedTime(start, stop, &milliseconds, "Copying data from device to host took");
 
     // Cleaning
     gpuErrchk(cudaFree(dev_clusters));

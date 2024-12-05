@@ -6,7 +6,7 @@
 #include <thrust/execution_policy.h>
 #include <thrust/sort.h>
 
-//#define DEEP_TIME_ANALYSIS
+#define DEEP_TIME_ANALYSIS
 
 __global__ void CalculateBelongings2(const float* clusters, const float* vectors, int* belonging, const int& N, const int& D, const int& K, int* vectors_moved)
 {
@@ -41,14 +41,11 @@ __global__ void CalculateBelongings2(const float* clusters, const float* vectors
     }
 }
 
-__global__ void CalculateClusters2(float* clusters, const int* cluster_count, const int& D, const int& K)
+__global__ void CalculateClusterMean2(float* clusters, const int* cluster_count, const int& D, const int& K)
 {
     int idx = blockDim.x * blockIdx.x + threadIdx.x;
-
-    for (int i = 0; i < D; i++)
-    {
-        clusters[idx + K * i] /= cluster_count[idx];
-    }
+    int cluster_id = idx % K;
+    clusters[idx] /= cluster_count[cluster_id];
 }
 
 void GpuKmeans2::CalculateKmeans()
@@ -90,6 +87,10 @@ void GpuKmeans2::CalculateKmeans()
 
     gpuErrchk(cudaSetDevice(0));
 
+    // time measurment
+    printf("Copying data...\n");
+    gpuErrchk(cudaEventRecord(start, 0));
+
     // Memory allocation on the side of the device
     gpuErrchk(cudaMalloc((void**)&dev_clusters, K * D * sizeof(float)));
     gpuErrchk(cudaMalloc((void**)&dev_vectors, N * D * sizeof(float)));
@@ -108,6 +109,9 @@ void GpuKmeans2::CalculateKmeans()
     gpuErrchk(cudaMemcpy(dev_d, &D, sizeof(int), cudaMemcpyHostToDevice));
     gpuErrchk(cudaMemset(dev_cluster_count, 0, K * sizeof(int)));
 
+    // time measurment
+    calculateElapsedTime(start, stop, &milliseconds, "Copying data from host to device took");
+
     // pointers initialization
     thrust::device_ptr<int> keys(dev_belonging);
     thrust::device_ptr<float> vals(dev_vectors);
@@ -121,8 +125,12 @@ void GpuKmeans2::CalculateKmeans()
     //-------------------------------
     //            LOGIC
     //-------------------------------
-    int iter = 0;
+#ifndef DEEP_TIME_ANALYSIS
+    printf("Calculating kmeans...\n");
+    gpuErrchk(cudaEventRecord(start, 0));
+#endif
 
+    int iter = 0;
     do {
         vectors_moved_count = 0;
         gpuErrchk(cudaMemset(dev_vectors_moved, 0, N * sizeof(int)));
@@ -163,6 +171,7 @@ void GpuKmeans2::CalculateKmeans()
 
         // sorting the rest of the belongings
         thrust::sort_by_key(keys + N, keys + N * D, vals + N);
+        //thrust::sort_by_key(keys, keys + N * D, vals);
 
 #ifdef DEEP_TIME_ANALYSIS
         calculateElapsedTime(start, stop, &milliseconds, "Sorting belongings");
@@ -186,32 +195,43 @@ void GpuKmeans2::CalculateKmeans()
 #endif
 
         // Updating cluster means
-        CalculateClusters2 << <1, K >> > (dev_clusters, dev_cluster_count, *dev_d, *dev_k);
+        CalculateClusterMean2 << <1, K * D >> > (dev_clusters, dev_cluster_count, *dev_d, *dev_k);
 
 #ifdef DEEP_TIME_ANALYSIS
         calculateElapsedTime(start, stop, &milliseconds, "Calculating means");
+        printf("\n");
 #endif
 
         // increment iteration count
         iter++;
     } while (vectors_moved_count > 0 && iter < MAX_ITERATIONS);
 
+    // back to original vectors order
+    thrust::sort_by_key(vector_order.begin(), vector_order.end(), keys);
+
+#ifndef DEEP_TIME_ANALYSIS
+    calculateElapsedTime(start, stop, &milliseconds, "Calculating kmeans took");
+    gpuErrchk(cudaEventRecord(start, 0));
+#endif
+
     //-------------------------------
     //         END OF LOGIC
     //-------------------------------
-
-    // back to original vectors order
-    gpuErrchk(cudaEventRecord(start, 0));
-    thrust::sort_by_key(vector_order.begin(), vector_order.end(), keys);
-    calculateElapsedTime(start, stop, &milliseconds, "Resorting the belongings to original order");
 
     // error checking and synchronization
     gpuErrchk(cudaGetLastError());
     gpuErrchk(cudaDeviceSynchronize());
 
+    // copying time
+    printf("Copying data...\n");
+    gpuErrchk(cudaEventRecord(start, 0));
+
     // Copy memory back to the host
     gpuErrchk(cudaMemcpy(clusters, dev_clusters, K * D * sizeof(float), cudaMemcpyDeviceToHost));
     gpuErrchk(cudaMemcpy(belonging, dev_belonging, N * sizeof(int), cudaMemcpyDeviceToHost));
+
+    // time measurment
+    calculateElapsedTime(start, stop, &milliseconds, "Copying data from device to host took");
 
     // Cleaning
     gpuErrchk(cudaFree(dev_clusters));
