@@ -4,7 +4,7 @@
 #include "device_launch_parameters.h"
 #include "HostConstants.h"
 
-#define gpuErrchk(ans) { KmeansCalculator::gpuAssert((ans), __FILE__, __LINE__); }
+//#define gpuErrchk(ans) { KmeansCalculator::gpuAssert((ans), __FILE__, __LINE__); }
 #define gpuError(cudaStatus) { printf("Error: %s, file: %s, line: %d\n", cudaGetErrorString(cudaStatus), __FILE__, __LINE__); }
 
 class KmeansCalculator {

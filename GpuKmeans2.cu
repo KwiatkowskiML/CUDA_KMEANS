@@ -58,6 +58,7 @@ void GpuKmeans2::CalculateKmeans()
     int* belonging = vectorsStorage->belonging;
     int vectors_moved_count = 0;
     float milliseconds = 0;
+    int iter = 0;
 
     float* dev_clusters = 0;
     float* dev_vectors = 0;
@@ -68,49 +69,7 @@ void GpuKmeans2::CalculateKmeans()
     int* dev_cluster_count = 0;
     int* dev_vectors_moved = 0;
     thrust::device_vector<int> vector_order(N);
-
-    // temp
-    gpuErrchk(cudaMalloc((void**)&dev_vectors_moved, N * sizeof(int)));
-    gpuErrchk(cudaMemset(dev_vectors_moved, 0, N * sizeof(int)));
-
-    //-------------------------------
-    //      TIME MEASUREMENT
-    //-------------------------------
-    
-    cudaEvent_t start, stop;
-    cudaEventCreate(&start);
-    cudaEventCreate(&stop);
-
-    //-------------------------------
-    //      DATA PREPARATION
-    //-------------------------------
-
-    gpuErrchk(cudaSetDevice(0));
-
-    // time measurment
-    printf("Copying data...\n");
-    gpuErrchk(cudaEventRecord(start, 0));
-
-    // Memory allocation on the side of the device
-    gpuErrchk(cudaMalloc((void**)&dev_clusters, K * D * sizeof(float)));
-    gpuErrchk(cudaMalloc((void**)&dev_vectors, N * D * sizeof(float)));
-    gpuErrchk(cudaMalloc((void**)&dev_belonging, N * D * sizeof(int)));
-    gpuErrchk(cudaMalloc((void**)&dev_n, sizeof(int)));
-    gpuErrchk(cudaMalloc((void**)&dev_k, sizeof(int)));
-    gpuErrchk(cudaMalloc((void**)&dev_d, sizeof(int)));
-    gpuErrchk(cudaMalloc((void**)&dev_cluster_count, K * sizeof(int)));
-
-    // Copying memory from host to device
-    gpuErrchk(cudaMemcpy(dev_vectors, vectors, N * D * sizeof(float), cudaMemcpyHostToDevice));
-    gpuErrchk(cudaMemcpy(dev_clusters, clusters, K * D * sizeof(float), cudaMemcpyHostToDevice));
-    gpuErrchk(cudaMemset(dev_belonging, 0, N * D * sizeof(int)));
-    gpuErrchk(cudaMemcpy(dev_n, &N, sizeof(int), cudaMemcpyHostToDevice));
-    gpuErrchk(cudaMemcpy(dev_k, &K, sizeof(int), cudaMemcpyHostToDevice));
-    gpuErrchk(cudaMemcpy(dev_d, &D, sizeof(int), cudaMemcpyHostToDevice));
-    gpuErrchk(cudaMemset(dev_cluster_count, 0, K * sizeof(int)));
-
-    // time measurment
-    calculateElapsedTime(start, stop, &milliseconds, "Copying data from host to device took");
+    cudaError_t cudaStatus;
 
     // pointers initialization
     thrust::device_ptr<int> keys(dev_belonging);
@@ -123,50 +82,270 @@ void GpuKmeans2::CalculateKmeans()
     thrust::copy(count_iter, count_iter + N, vector_order.begin());
 
     //-------------------------------
+    //      TIME MEASUREMENT
+    //-------------------------------
+    
+    cudaEvent_t start, stop;
+    cudaStatus = cudaEventCreate(&start);
+    if (cudaStatus != cudaSuccess)
+    {
+        gpuError(cudaStatus);
+        goto Error;
+    }
+
+    cudaStatus = cudaEventCreate(&stop);
+    if (cudaStatus != cudaSuccess)
+    {
+        gpuError(cudaStatus);
+        goto Error;
+    }
+
+    //-------------------------------
+    //      DATA PREPARATION
+    //-------------------------------
+
+    cudaStatus = cudaSetDevice(0);
+    if (cudaStatus != cudaSuccess)
+    {
+        gpuError(cudaStatus);
+        goto Error;
+    }
+
+    // time measurment
+    printf("Copying data...\n");
+    cudaStatus = cudaEventRecord(start, 0);
+    if (cudaStatus != cudaSuccess)
+    {
+        gpuError(cudaStatus);
+        goto Error;
+    }
+
+    // Memory allocation on the side of the device
+    cudaStatus = cudaMalloc((void**)&dev_clusters, K * D * sizeof(float));
+    if (cudaStatus != cudaSuccess)
+    {
+        gpuError(cudaStatus);
+        goto Error;
+    }
+    cudaStatus = cudaMalloc((void**)&dev_vectors, N * D * sizeof(float));
+    if (cudaStatus != cudaSuccess)
+    {
+        gpuError(cudaStatus);
+        goto Error;
+    }
+
+    cudaStatus = cudaMalloc((void**)&dev_belonging, N * D * sizeof(int));
+    if (cudaStatus != cudaSuccess)
+    {
+        gpuError(cudaStatus);
+        goto Error;
+    }
+
+    cudaStatus = cudaMalloc((void**)&dev_n, sizeof(int));
+    if (cudaStatus != cudaSuccess)
+    {
+        gpuError(cudaStatus);
+        goto Error;
+    }
+
+    cudaStatus = cudaMalloc((void**)&dev_k, sizeof(int));
+    if (cudaStatus != cudaSuccess)
+    {
+        gpuError(cudaStatus);
+        goto Error;
+    }
+
+    cudaStatus = cudaMalloc((void**)&dev_d, sizeof(int));
+    if (cudaStatus != cudaSuccess)
+    {
+        gpuError(cudaStatus);
+        goto Error;
+    }
+    
+    cudaStatus = cudaMalloc((void**)&dev_cluster_count, K * sizeof(int));
+    if (cudaStatus != cudaSuccess)
+    {
+        gpuError(cudaStatus);
+        goto Error;
+    }
+
+    cudaStatus = cudaMalloc((void**)&dev_vectors_moved, N * sizeof(int));
+    if (cudaStatus != cudaSuccess)
+    {
+        gpuError(cudaStatus);
+        goto Error;
+    }
+
+    // Copying memory from host to device
+    cudaStatus = cudaMemcpy(dev_vectors, vectors, N * D * sizeof(float), cudaMemcpyHostToDevice);
+    if (cudaStatus != cudaSuccess)
+    {
+        gpuError(cudaStatus);
+        goto Error;
+    }
+
+    cudaStatus = cudaMemcpy(dev_clusters, clusters, K * D * sizeof(float), cudaMemcpyHostToDevice);
+    if (cudaStatus != cudaSuccess)
+    {
+        gpuError(cudaStatus);
+        goto Error;
+    }
+
+    cudaStatus = cudaMemset(dev_belonging, 0, N * D * sizeof(int));
+    if (cudaStatus != cudaSuccess)
+    {
+        gpuError(cudaStatus);
+        goto Error;
+    }
+
+    cudaStatus = cudaMemcpy(dev_n, &N, sizeof(int), cudaMemcpyHostToDevice);
+    if (cudaStatus != cudaSuccess)
+    {
+        gpuError(cudaStatus);
+        goto Error;
+    }
+
+    cudaStatus = cudaMemcpy(dev_k, &K, sizeof(int), cudaMemcpyHostToDevice);
+    if (cudaStatus != cudaSuccess)
+    {
+        gpuError(cudaStatus);
+        goto Error;
+    }
+
+    cudaStatus = cudaMemcpy(dev_d, &D, sizeof(int), cudaMemcpyHostToDevice);
+    if (cudaStatus != cudaSuccess)
+    {
+        gpuError(cudaStatus);
+        goto Error;
+    }
+
+    cudaStatus = cudaMemset(dev_cluster_count, 0, K * sizeof(int));
+    if (cudaStatus != cudaSuccess)
+    {
+        gpuError(cudaStatus);
+        goto Error;
+    }
+
+    cudaStatus = cudaMemset(dev_vectors_moved, 0, N * sizeof(int));
+    if (cudaStatus != cudaSuccess)
+    {
+        gpuError(cudaStatus);
+        goto Error;
+    }
+
+    // time measurment
+    cudaStatus = calculateElapsedTime(start, stop, &milliseconds, "Copying data from host to device took");
+    if (cudaStatus != cudaSuccess)
+    {
+        gpuError(cudaStatus);
+        goto Error;
+    }    
+
+    //-------------------------------
     //            LOGIC
     //-------------------------------
 #ifndef DEEP_TIME_ANALYSIS
     printf("Calculating kmeans...\n");
-    gpuErrchk(cudaEventRecord(start, 0));
+    cudaStatus = cudaEventRecord(start, 0);
+    if (cudaStatus != cudaSuccess)
+    {
+        gpuError(cudaStatus);
+        goto Error;
+    }
 #endif
 
-    int iter = 0;
     do {
         vectors_moved_count = 0;
-        gpuErrchk(cudaMemset(dev_vectors_moved, 0, N * sizeof(int)));
+        cudaStatus = cudaMemset(dev_vectors_moved, 0, N * sizeof(int));
+        if (cudaStatus != cudaSuccess)
+        {
+            gpuError(cudaStatus);
+            goto Error;
+        }
         
 #ifdef DEEP_TIME_ANALYSIS
-        gpuErrchk(cudaEventRecord(start, 0));
+        cudaStatus = cudaEventRecord(start, 0);
+        if (cudaStatus != cudaSuccess)
+        {
+            gpuError(cudaStatus);
+            goto Error;
+        }
 #endif
-        // calculating belongings for each vector
+        // calculating each vectors belonging
         int block_count = (N + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
         CalculateBelongings2 << <block_count, THREADS_PER_BLOCK >> > (dev_clusters, dev_vectors, dev_belonging, *dev_n, *dev_d, *dev_k, dev_vectors_moved);
+        cudaStatus = cudaGetLastError();
+        if (cudaStatus != cudaSuccess)
+        {
+            gpuError(cudaStatus);
+            goto Error;
+        }
+
+        cudaStatus = cudaDeviceSynchronize();
+        if (cudaStatus != cudaSuccess)
+        {
+            gpuError(cudaStatus);
+            goto Error;
+        }
 
 #ifdef DEEP_TIME_ANALYSIS
-        calculateElapsedTime(start, stop, &milliseconds, "Calculate belongings");
-        gpuErrchk(cudaEventRecord(start, 0));
+        cudaStatus = calculateElapsedTime(start, stop, &milliseconds, "Calculate belongings");
+        if (cudaStatus != cudaSuccess)
+        {
+            gpuError(cudaStatus);
+            goto Error;
+        }
+
+        cudaStatus = cudaEventRecord(start, 0);
+        if (cudaStatus != cudaSuccess)
+        {
+            gpuError(cudaStatus);
+            goto Error;
+        }
 #endif
         // calculating the number of moved vectors
         vectors_moved_count = thrust::reduce(thrust::device, dev_vectors_moved, dev_vectors_moved + N);
 
 #ifdef DEEP_TIME_ANALYSIS
-        calculateElapsedTime(start, stop, &milliseconds, "reduce 1");
+        cudaStatus = calculateElapsedTime(start, stop, &milliseconds, "reduce 1");
+        if (cudaStatus != cudaSuccess)
+        {
+            gpuError(cudaStatus);
+            goto Error;
+        }
 #endif
 
         printf("Iteration %d, number of vectors moved: %d\n", iter, vectors_moved_count);
         if (vectors_moved_count == 0)
             break;
-
         
 #ifdef DEEP_TIME_ANALYSIS
-        gpuErrchk(cudaEventRecord(start, 0));
+        cudaStatus = cudaEventRecord(start, 0);
+        if (cudaStatus != cudaSuccess)
+        {
+            gpuError(cudaStatus);
+            goto Error;
+        }
 #endif
-        // sorting the order of vectors, accordingly to the current order of belonging
+        // sorting the order of vectors to keep track of the initial vector order
+        printf("test\n");
         thrust::sort_by_key(keys, keys + N, thrust::make_zip_iterator(thrust::make_tuple(vector_order.begin(), vals)));
+        printf("test\n");
 
 #ifdef DEEP_TIME_ANALYSIS
-        calculateElapsedTime(start, stop, &milliseconds, "Sorting vector order");
-        gpuErrchk(cudaEventRecord(start, 0));
+        cudaStatus = calculateElapsedTime(start, stop, &milliseconds, "Sorting vector order");
+        if (cudaStatus != cudaSuccess)
+        {
+            gpuError(cudaStatus);
+            goto Error;
+        }
+
+        cudaStatus = cudaEventRecord(start, 0);
+        if (cudaStatus != cudaSuccess)
+        {
+            gpuError(cudaStatus);
+            goto Error;
+        }
 #endif
 
         // sorting the rest of the belongings
@@ -174,31 +353,82 @@ void GpuKmeans2::CalculateKmeans()
         //thrust::sort_by_key(keys, keys + N * D, vals);
 
 #ifdef DEEP_TIME_ANALYSIS
-        calculateElapsedTime(start, stop, &milliseconds, "Sorting belongings");
-        gpuErrchk(cudaEventRecord(start, 0));
+        cudaStatus = calculateElapsedTime(start, stop, &milliseconds, "Sorting belongings");
+        if (cudaStatus != cudaSuccess)
+        {
+            gpuError(cudaStatus);
+            goto Error;
+        }
+
+        cudaStatus = cudaEventRecord(start, 0);
+        if (cudaStatus != cudaSuccess)
+        {
+            gpuError(cudaStatus);
+            goto Error;
+        }
 #endif
 
         // summing vectors in each cluster
         thrust::reduce_by_key(keys, keys + N * D, vals, thrust::make_discard_iterator(), clusters_ptr, binary_pred);
 
 #ifdef DEEP_TIME_ANALYSIS
-        calculateElapsedTime(start, stop, &milliseconds, "Summing vectors in each cluster");
-        gpuErrchk(cudaEventRecord(start, 0));
+        cudaStatus = calculateElapsedTime(start, stop, &milliseconds, "Summing vectors in each cluster");
+        if (cudaStatus != cudaSuccess)
+        {
+            gpuError(cudaStatus);
+            goto Error;
+        }
+
+        cudaStatus = cudaEventRecord(start, 0);
+        if (cudaStatus != cudaSuccess)
+        {
+            gpuError(cudaStatus);
+            goto Error;
+        }
 #endif
 
         // counting number of vectors in each cluster
         thrust::reduce_by_key(keys, keys + N, const_iter, thrust::make_discard_iterator(), cluster_count_ptr, binary_pred);
 
 #ifdef DEEP_TIME_ANALYSIS
-        calculateElapsedTime(start, stop, &milliseconds, "Counting number of vectors in each cluster");
-        gpuErrchk(cudaEventRecord(start, 0));
+        cudaStatus = calculateElapsedTime(start, stop, &milliseconds, "Counting number of vectors in each cluster");
+        if (cudaStatus != cudaSuccess)
+        {
+            gpuError(cudaStatus);
+            goto Error;
+        }
+
+        cudaStatus = cudaEventRecord(start, 0);
+        if (cudaStatus != cudaSuccess)
+        {
+            gpuError(cudaStatus);
+            goto Error;
+        }
 #endif
 
         // Updating cluster means
         CalculateClusterMean2 << <1, K * D >> > (dev_clusters, dev_cluster_count, *dev_d, *dev_k);
+        cudaStatus = cudaGetLastError();
+        if (cudaStatus != cudaSuccess)
+        {
+            gpuError(cudaStatus);
+            goto Error;
+        }
+
+        cudaStatus = cudaDeviceSynchronize();
+        if (cudaStatus != cudaSuccess)
+        {
+            gpuError(cudaStatus);
+            goto Error;
+        }
 
 #ifdef DEEP_TIME_ANALYSIS
-        calculateElapsedTime(start, stop, &milliseconds, "Calculating means");
+        cudaStatus = calculateElapsedTime(start, stop, &milliseconds, "Calculating means");
+        if (cudaStatus != cudaSuccess)
+        {
+            gpuError(cudaStatus);
+            goto Error;
+        }
         printf("\n");
 #endif
 
@@ -210,8 +440,19 @@ void GpuKmeans2::CalculateKmeans()
     thrust::sort_by_key(vector_order.begin(), vector_order.end(), keys);
 
 #ifndef DEEP_TIME_ANALYSIS
-    calculateElapsedTime(start, stop, &milliseconds, "Calculating kmeans took");
-    gpuErrchk(cudaEventRecord(start, 0));
+    cudaStatus = calculateElapsedTime(start, stop, &milliseconds, "Calculating kmeans took");
+    if (cudaStatus != cudaSuccess)
+    {
+        gpuError(cudaStatus);
+        goto Error;
+    }
+
+    cudaStatus = cudaEventRecord(start, 0);
+    if (cudaStatus != cudaSuccess)
+    {
+        gpuError(cudaStatus);
+        goto Error;
+    }
 #endif
 
     //-------------------------------
@@ -219,28 +460,61 @@ void GpuKmeans2::CalculateKmeans()
     //-------------------------------
 
     // error checking and synchronization
-    gpuErrchk(cudaGetLastError());
-    gpuErrchk(cudaDeviceSynchronize());
+    cudaStatus = cudaGetLastError();
+    if (cudaStatus != cudaSuccess)
+    {
+        gpuError(cudaStatus);
+        goto Error;
+    }
+
+    cudaStatus = cudaDeviceSynchronize();
+    if (cudaStatus != cudaSuccess)
+    {
+        gpuError(cudaStatus);
+        goto Error;
+    }
 
     // copying time
     printf("Copying data...\n");
-    gpuErrchk(cudaEventRecord(start, 0));
+    cudaStatus = cudaEventRecord(start, 0);
+    if (cudaStatus != cudaSuccess)
+    {
+        gpuError(cudaStatus);
+        goto Error;
+    }
 
     // Copy memory back to the host
-    gpuErrchk(cudaMemcpy(clusters, dev_clusters, K * D * sizeof(float), cudaMemcpyDeviceToHost));
-    gpuErrchk(cudaMemcpy(belonging, dev_belonging, N * sizeof(int), cudaMemcpyDeviceToHost));
+    cudaStatus = cudaMemcpy(clusters, dev_clusters, K * D * sizeof(float), cudaMemcpyDeviceToHost);
+    if (cudaStatus != cudaSuccess)
+    {
+        gpuError(cudaStatus);
+        goto Error;
+    }
+
+    cudaStatus = cudaMemcpy(belonging, dev_belonging, N * sizeof(int), cudaMemcpyDeviceToHost);
+    if (cudaStatus != cudaSuccess)
+    {
+        gpuError(cudaStatus);
+        goto Error;
+    }
 
     // time measurment
-    calculateElapsedTime(start, stop, &milliseconds, "Copying data from device to host took");
+    cudaStatus = calculateElapsedTime(start, stop, &milliseconds, "Copying data from device to host took");
+    if (cudaStatus != cudaSuccess)
+    {
+        gpuError(cudaStatus);
+        goto Error;
+    }
 
-    // Cleaning
-    gpuErrchk(cudaFree(dev_clusters));
-    gpuErrchk(cudaFree(dev_vectors));
-    gpuErrchk(cudaFree(dev_belonging));
-    gpuErrchk(cudaFree(dev_n));
-    gpuErrchk(cudaFree(dev_k));
-    gpuErrchk(cudaFree(dev_d));
-    gpuErrchk(cudaEventDestroy(start));
-    gpuErrchk(cudaEventDestroy(stop));
-    gpuErrchk(cudaFree(dev_vectors_moved));
+Error:
+    cudaEventDestroy(start);
+    cudaEventDestroy(stop);
+
+    cudaFree(dev_clusters);
+    cudaFree(dev_vectors);
+    cudaFree(dev_belonging);
+    cudaFree(dev_n);
+    cudaFree(dev_k);
+    cudaFree(dev_d);
+    cudaFree(dev_vectors_moved);
 }
