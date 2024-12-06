@@ -6,8 +6,6 @@
 #include <thrust/execution_policy.h>
 #include <thrust/sort.h>
 
-// #define DEEP_TIME_ANALYSIS
-
 __global__ void CalculateBelongings2(const float* clusters, const float* vectors, int* belonging, const int& N, const int& D, const int& K, int* vectors_moved)
 {
     int idx = blockDim.x * blockIdx.x + threadIdx.x;
@@ -30,11 +28,13 @@ __global__ void CalculateBelongings2(const float* clusters, const float* vectors
         }
     }
 
+    // marking vector if cluster has been changed
     if (belonging[idx] != min_cluster)
     {
         vectors_moved[idx] = 1;   
     }
 
+    // marking each dimension of the vector with correc belonging id, to sort and reduce it later
     for (int i = 0; i < D; i++)
     {
         belonging[idx + i * N] = i * K + min_cluster;
@@ -355,7 +355,6 @@ void GpuKmeans2::CalculateKmeans()
 
         // sorting the rest of the belongings
         thrust::sort_by_key(keys + N, keys + N * D, vals + N);
-        //thrust::sort_by_key(keys, keys + N * D, vals);
 
 #ifdef DEEP_TIME_ANALYSIS
         cudaStatus = calculateElapsedTime(start, stop, &milliseconds, "Sorting belongings");

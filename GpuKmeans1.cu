@@ -5,8 +5,6 @@
 #include <thrust/reduce.h>
 #include <thrust/execution_policy.h>
 
-//#define DEEP_TIME_ANALYSIS
-
 __global__ void CalculateBelongings(const float* clusters, const float* vectors, int* belonging, int* cluster_count, const int& N, const int& D, const int& K, int* vectors_moved)
 {
     int idx =  blockDim.x * blockIdx.x + threadIdx.x;
@@ -452,7 +450,6 @@ void GpuKmeans1::CalculateKmeans()
         // Sum vectors in each cluster
         block_count = (N * D + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
         AddKernel2 << <block_count, THREADS_PER_BLOCK, K * D * sizeof(float) >> > (dev_clusters, dev_vectors, dev_belonging, *dev_n, *dev_d, *dev_k);
-        //AddKernel << <block_count, THREADS_PER_BLOCK >> > (dev_clusters, dev_vectors, dev_belonging, *dev_n, *dev_d, *dev_k);
         cudaStatus = cudaGetLastError();
         if (cudaStatus != cudaSuccess)
         {
