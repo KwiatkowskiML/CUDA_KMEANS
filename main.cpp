@@ -29,6 +29,9 @@ int main(int argc, char* argv[]) {
     const char* input_file = argv[3];
     const char* output_file = argv[4];
 
+    printf("Computation method: %s\n", computation_method);
+    printf("Input format: %s\n", input_format);
+
     bool is_txt = strcmp(input_format, "txt") == 0;
 	bool is_bin = strcmp(input_format, "bin") == 0;
 	bool is_cpu = strcmp(computation_method, "cpu") == 0;
@@ -58,6 +61,10 @@ int main(int argc, char* argv[]) {
     end_time = std::chrono::high_resolution_clock::now();
     time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
     printf("Reading data took %lld ms\n", time);
+
+    printf("Number of vectors: %d\n", vectorsStorage.getNumPoints());
+    printf("Number of clusters: %d\n", vectorsStorage.getNumClusters());
+    printf("Number of dimensions: %d\n", vectorsStorage.getNumDimensions());
 
     //----------------------------------
     //   Choose correct algorithm
